@@ -4,6 +4,7 @@ let currentUser = null;
 let adminResults = {};
 let allUsersData = [];
 
+// OS 72 JOGOS REAIS
 const ALL_GAMES = [
     ["11 DE JUNHO (QUI)", [{ id: 'g01', grp: "A", t1: "México", f1: "mx", t2: "África do Sul", f2: "za" }, { id: 'g02', grp: "A", t1: "Cor. do Sul", f1: "kr", t2: "Rep. Tcheca", f2: "cz" }]],
     ["12 DE JUNHO (SEX)", [{ id: 'g03', grp: "B", t1: "Canadá", f1: "ca", t2: "Bósnia e H.", f2: "ba" }, { id: 'g04', grp: "D", t1: "EUA", f1: "us", t2: "Paraguai", f2: "py" }]],
@@ -36,20 +37,30 @@ window.addEventListener('load', () => {
 
 async function realizarLogin() {
     const name = document.getElementById('login-name').value.trim();
-    const pin = document.getElementById('login-pin').value.trim();
+    const surname = document.getElementById('login-surname').value.trim();
     
-    if(!name || pin.length !== 4) { mostrarErroLogin("Preencha o nome e um PIN de 4 dígitos."); return; }
-    showLoading(true);
+    if(!name || !surname) { 
+        mostrarErroLogin("Preencha seu Nome e Sobrenome."); 
+        return; 
+    }
 
+    // TRUQUE DO ADMINISTRADOR: Se digitar Admin Bolao, o sistema libera
+    let fullName = name + " " + surname;
+    if(name.toLowerCase() === "admin" && surname.toLowerCase() === "bolao") {
+        fullName = "Admin";
+    }
+
+    showLoading(true);
     try {
         const resp = await fetch(`${API_URL}/login`, {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name, pin })
+            body: JSON.stringify({ name: fullName })
         }).then(r => r.json());
 
-        if (resp.success) entrar(name, pin);
-        else mostrarErroLogin(resp.message);
-    } catch (e) { mostrarErroLogin("Erro de conexão. A API pode estar iniciando (leva 30s)."); }
+        if (resp.success) entrar(fullName);
+    } catch (e) { 
+        mostrarErroLogin("Erro de conexão. A API pode estar iniciando (leva 30s)."); 
+    }
     showLoading(false);
 }
 
@@ -58,8 +69,8 @@ function mostrarErroLogin(msg) {
     errEl.innerText = msg; errEl.style.display = 'block';
 }
 
-function entrar(name, pin) {
-    currentUser = { name, pin };
+function entrar(fullName) {
+    currentUser = { name: fullName };
     localStorage.setItem('bolao_session', JSON.stringify(currentUser));
     document.getElementById('login-screen').style.display = 'none';
     iniciarApp();
@@ -73,7 +84,7 @@ async function iniciarApp() {
     
     renderGames('mobile-slip-container', 'user');
 
-    if (currentUser.name.toLowerCase() === "admin") {
+    if (currentUser.name === "Admin") {
         renderGames('admin-slip-container', 'admin');
         document.querySelector('.tab-btn[onclick*="admin"]').style.display = 'inline-block';
     }
@@ -114,7 +125,7 @@ async function carregarDadosDaNuvem() {
         if (meusPalpites && Object.keys(meusPalpites).length > 0) preencherEBloquearPalpites(meusPalpites);
 
         adminResults = await fetch(`${API_URL}/palpites/Admin`).then(r => r.json());
-        if (currentUser.name.toLowerCase() === "admin" && adminResults) {
+        if (currentUser.name === "Admin" && adminResults) {
             Object.keys(adminResults).forEach(mId => {
                 const h = document.querySelector(`.a-h-${mId}`); const a = document.querySelector(`.a-a-${mId}`);
                 if(h && a) { h.value = adminResults[mId].h; a.value = adminResults[mId].a; }
@@ -172,7 +183,7 @@ function calculateAndRenderRanking() {
     if(!allUsersData) return;
     let ranking = [];
     allUsersData.forEach(u => {
-        if (u.name.toLowerCase() === "admin") return;
+        if (u.name === "Admin") return; // Esconde o Admin da tabela
         let p = { name: u.name, pts: 0, v: 0, e: 0, d: 0, j: 0 };
         const palps = u.jogos || {};
         Object.keys(adminResults).forEach(mId => {

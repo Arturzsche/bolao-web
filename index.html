@@ -14,16 +14,16 @@
 <div id="login-screen" class="login-overlay">
     <div class="login-card">
         <h1 class="logo-text" style="font-size: 2.5rem; text-align: center; margin-bottom: 5px;">BOLÃO<span>26</span></h1>
-        <p style="text-align: center; color: #666; margin-bottom: 25px;">Acesse para lançar seus palpites</p>
+        <p style="text-align: center; color: #666; margin-bottom: 25px;">Identifique-se para lançar seus palpites</p>
         
-        <label>Seu Nome:</label>
-        <input type="text" id="login-name" class="input-field" placeholder="Ex: Artur">
+        <label>Nome:</label>
+        <input type="text" id="login-name" class="input-field" placeholder="Ex: João">
         
-        <label style="margin-top: 15px;">PIN de Acesso (4 dígitos):</label>
-        <input type="password" id="login-pin" class="input-field" placeholder="****" maxlength="4" inputmode="numeric">
+        <label style="margin-top: 15px; display: block;">Sobrenome:</label>
+        <input type="text" id="login-surname" class="input-field" placeholder="Ex: Silva">
         
         <button class="btn-float-save" style="position: static; width: 100%; margin-top: 25px; transform: none; padding: 15px;" onclick="realizarLogin()">ENTRAR NO BOLÃO</button>
-        <p id="login-error" style="color: red; text-align: center; margin-top: 15px; display: none; font-weight: 600;">Dados incorretos!</p>
+        <p id="login-error" style="color: red; text-align: center; margin-top: 15px; display: none; font-weight: 600;">Preencha Nome e Sobrenome!</p>
     </div>
 </div>
 
@@ -32,8 +32,8 @@
         <div class="logo-text">BOLÃO<span>26</span></div>
         <div style="font-weight: 600; font-size: 0.85rem; display: flex; align-items: center; gap: 10px;">
             <i class="ph-bold ph-user-circle" style="font-size: 1.5rem; color: var(--br-yellow);"></i>
-            <span id="display-user-name">Usuário</span>
-            <button onclick="fazerLogout()" style="background: none; border: none; color: white; text-decoration: underline; cursor: pointer;">Sair</button>
+            <span id="display-user-name" style="color: white;">Usuário</span>
+            <button onclick="fazerLogout()" style="background: none; border: none; color: #FFDF00; text-decoration: underline; cursor: pointer;">Sair</button>
         </div>
     </header>
 
@@ -46,7 +46,7 @@
     <div class="app-content">
         <section id="view-palpites" class="view active">
             <div id="lock-warning" style="display: none; background: #e0f2fe; color: #0369a1; padding: 15px; border-radius: 6px; margin-bottom: 20px; text-align: center; font-weight: 600; border: 1px solid #bae6fd;">
-                <i class="ph-fill ph-lock-key"></i> Seus palpites já foram enviados e estão bloqueados. Boa sorte!
+                <i class="ph-fill ph-lock-key"></i> Seus palpites já foram enviados e estão bloqueados no sistema. Boa sorte!
             </div>
             
             <div id="mobile-slip-container"></div>
@@ -76,11 +76,11 @@
         </section>
 
         <section id="view-admin" class="view">
-            <div class="admin-warning">
-                <strong>Área do Organizador:</strong> Lance aqui os placares reais da Copa. A classificação será atualizada para todos.
+            <div class="admin-warning" style="background: #fee2e2; color: #ef4444; padding: 12px; border-radius: 6px; font-size: 0.85rem; margin-bottom: 20px; border: 1px solid #fca5a5;">
+                <strong>Área do Organizador:</strong> Lance aqui os placares reais da Copa. A classificação será atualizada para todos instantaneamente.
             </div>
             <div id="admin-slip-container"></div>
-            <button class="btn-float-save" style="background: var(--ge-blue);" onclick="saveAdminResults()"><i class="ph-fill ph-upload-simple"></i> Publicar Gabarito</button>
+            <button class="btn-float-save" style="background: var(--ge-blue);" onclick="saveAdminResults()"><i class="ph-fill ph-upload-simple"></i> Publicar Gabarito Oficial</button>
         </section>
     </div>
 </div>
