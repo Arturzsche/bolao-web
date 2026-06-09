@@ -44,7 +44,6 @@ async function realizarLogin() {
         return; 
     }
 
-    // TRUQUE DO ADMINISTRADOR: Se digitar Admin Bolao, o sistema libera
     let fullName = name + " " + surname;
     if(name.toLowerCase() === "admin" && surname.toLowerCase() === "bolao") {
         fullName = "Admin";
@@ -238,9 +237,34 @@ function switchTab(tab) {
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
     document.getElementById('view-' + tab).classList.add('active');
     document.querySelector(`.tab-btn[onclick*="${tab}"]`).classList.add('active');
+    
+    // Puxa os dados na hora ao clicar em Classificação
+    if (tab === 'ranking') {
+        carregarRankingSilencioso();
+    }
 }
+
 function showLoading(show) { document.getElementById('loading-spinner').style.display = show ? 'flex' : 'none'; }
 function showToast(msg) {
     const t = document.getElementById('toast-notif');
     t.innerText = msg; t.style.display = 'block'; setTimeout(() => t.style.display = 'none', 3000);
 }
+
+// --- SISTEMA DE ATUALIZAÇÃO EM TEMPO REAL ---
+async function carregarRankingSilencioso() {
+    try {
+        allUsersData = await fetch(`${API_URL}/users`).then(r => r.json());
+        adminResults = await fetch(`${API_URL}/palpites/Admin`).then(r => r.json());
+        calculateAndRenderRanking();
+    } catch(e) {
+        console.log("Aguardando conexão com o servidor...");
+    }
+}
+
+// Roda a função silenciosa a cada 10 segundos
+setInterval(() => {
+    const viewRanking = document.getElementById('view-ranking');
+    if (viewRanking && viewRanking.classList.contains('active')) {
+        carregarRankingSilencioso();
+    }
+}, 10000);
