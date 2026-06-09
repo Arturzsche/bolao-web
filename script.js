@@ -29,6 +29,8 @@ window.addEventListener('load', () => {
     const savedSession = localStorage.getItem('bolao_session');
     if (savedSession) {
         currentUser = JSON.parse(savedSession);
+        // CORREÇÃO: Esconder a tela de login ao atualizar a página!
+        document.getElementById('login-screen').style.display = 'none';
         iniciarApp();
     } else {
         document.getElementById('login-screen').style.display = 'flex';
@@ -179,45 +181,55 @@ async function saveAdminResults() {
 }
 
 function calculateAndRenderRanking() {
-    if(!allUsersData) return;
+    const tbody = document.getElementById('ranking-body-app');
+    if (!tbody) return;
+
+    // CORREÇÃO: Previne tabela vazia
+    if (!allUsersData || allUsersData.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="9" style="padding: 20px; color: #999;">Nenhum participante registrado ainda.</td></tr>`;
+        return;
+    }
+
     let ranking = [];
     allUsersData.forEach(u => {
-        if (u.name === "Admin") return; // Esconde o Admin da tabela
+        if (u.name === "Admin") return;
         let p = { name: u.name, pts: 0, v: 0, e: 0, d: 0, j: 0 };
         const palps = u.jogos || {};
-        Object.keys(adminResults).forEach(mId => {
-            if(palps[mId]) {
-                p.j++;
-                const ph = parseInt(palps[mId].h), pa = parseInt(palps[mId].a), rh = parseInt(adminResults[mId].h), ra = parseInt(adminResults[mId].a);
-                if(ph === rh && pa === ra) { p.pts += 8; p.v++; }
-                else if((ph>pa && rh>ra) || (ph<pa && rh<ra) || (ph===pa && rh===ra)) { p.pts += 3; p.e++; }
-                else { p.d++; }
-            }
-        });
+        
+        // Só soma pontos se houver gabarito
+        if (adminResults) {
+            Object.keys(adminResults).forEach(mId => {
+                if(palps[mId]) {
+                    p.j++;
+                    const ph = parseInt(palps[mId].h), pa = parseInt(palps[mId].a), rh = parseInt(adminResults[mId].h), ra = parseInt(adminResults[mId].a);
+                    if(ph === rh && pa === ra) { p.pts += 8; p.v++; }
+                    else if((ph>pa && rh>ra) || (ph<pa && rh<ra) || (ph===pa && rh===ra)) { p.pts += 3; p.e++; }
+                    else { p.d++; }
+                }
+            });
+        }
         ranking.push(p);
     });
+
     ranking.sort((a, b) => b.pts - a.pts || b.v - a.v || b.e - a.e);
     
-    const tbody = document.getElementById('ranking-body-app');
-    if (tbody) {
-        tbody.innerHTML = ranking.map((r, i) => {
-            const aprov = r.j > 0 ? Math.round((r.pts / (r.j * 8)) * 100) : 0;
-            let bolinhas = '';
-            for(let k=0; k<5; k++) {
-                if (k < r.v) bolinhas += '<span class="form-dot win"></span>';
-                else if (k < r.v + r.e) bolinhas += '<span class="form-dot draw"></span>';
-                else bolinhas += '<span class="form-dot loss"></span>';
-            }
-            return `<tr>
-                <td class="td-pos" style="color:var(--ge-blue); font-weight: 800; width: 40px;">${i+1}</td>
-                <td style="text-align: left; padding-left: 10px; font-weight: 600;">${r.name}</td>
-                <td class="td-pts">${r.pts}</td>
-                <td style="color: #666;">${r.j}</td><td style="color: #666;">${r.v}</td><td style="color: #666;">${r.e}</td><td style="color: #666;">${r.d}</td>
-                <td style="color: #666; font-weight: 700;">${aprov}%</td>
-                <td class="recent-form">${bolinhas}</td>
-            </tr>`;
-        }).join('');
-    }
+    tbody.innerHTML = ranking.map((r, i) => {
+        const aprov = r.j > 0 ? Math.round((r.pts / (r.j * 8)) * 100) : 0;
+        let bolinhas = '';
+        for(let k=0; k<5; k++) {
+            if (k < r.v) bolinhas += '<span class="form-dot win"></span>';
+            else if (k < r.v + r.e) bolinhas += '<span class="form-dot draw"></span>';
+            else bolinhas += '<span class="form-dot loss"></span>';
+        }
+        return `<tr>
+            <td class="td-pos" style="color:var(--ge-blue); font-weight: 800; width: 40px;">${i+1}</td>
+            <td style="text-align: left; padding-left: 10px; font-weight: 600;">${r.name}</td>
+            <td class="td-pts">${r.pts}</td>
+            <td style="color: #666;">${r.j}</td><td style="color: #666;">${r.v}</td><td style="color: #666;">${r.e}</td><td style="color: #666;">${r.d}</td>
+            <td style="color: #666; font-weight: 700;">${aprov}%</td>
+            <td class="recent-form">${bolinhas}</td>
+        </tr>`;
+    }).join('');
 }
 
 function updateWinnerBadge(input) {
@@ -238,7 +250,6 @@ function switchTab(tab) {
     document.getElementById('view-' + tab).classList.add('active');
     document.querySelector(`.tab-btn[onclick*="${tab}"]`).classList.add('active');
     
-    // Puxa os dados na hora ao clicar em Classificação
     if (tab === 'ranking') {
         carregarRankingSilencioso();
     }
@@ -261,7 +272,6 @@ async function carregarRankingSilencioso() {
     }
 }
 
-// Roda a função silenciosa a cada 10 segundos
 setInterval(() => {
     const viewRanking = document.getElementById('view-ranking');
     if (viewRanking && viewRanking.classList.contains('active')) {
