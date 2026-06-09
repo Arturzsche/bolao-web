@@ -90,3 +90,23 @@ input[type=number] { -moz-appearance: textfield; }
     .entry-input { width: 30px; height: 30px; font-size: 1rem; }
     .entry-ve-badge { padding: 2px 4px; font-size: 0.65rem; }
 }
+/* ---- ADIÇÕES FINAIS: TELA DE LOGIN E ESTILOS GE ---- */
+.login-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: var(--ge-blue); display: flex; justify-content: center; align-items: center; z-index: 9999; }
+.login-card { background: white; padding: 40px; border-radius: 12px; width: 90%; max-width: 400px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+.input-field { width: 100%; padding: 15px; border: 1px solid #CCC; border-radius: 6px; font-size: 1.1rem; outline: none; margin-top: 5px; background: #FAFAFA; }
+.input-field:focus { border-color: var(--br-green); }
+.entry-input:disabled { background-color: #E0E0E0; color: #888; border-color: #CCC; cursor: not-allowed; }
+
+.loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,39,118,0.9); display: flex; justify-content: center; align-items: center; z-index: 10000; }
+.spinner { border: 6px solid rgba(255, 255, 255, 0.3); border-top: 6px solid var(--br-yellow); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; }
+@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+/* Tabela Estilo GE */
+.ge-table th { background: #FFFFFF; font-size: 10px; color: #999; text-transform: uppercase; border-bottom: 2px solid #EEE; padding: 12px 5px; }
+.ge-table td { padding: 12px 5px; border-bottom: 1px solid #F0F0F0; font-size: 14px; text-align: center; }
+.td-pts { font-weight: 800; font-size: 1rem; background: #F9F9F9; color: var(--text-dark); }
+.recent-form { display: flex; justify-content: center; gap: 4px; align-items: center; }
+.form-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+.form-dot.win { background-color: #06AA48; }
+.form-dot.draw { background-color: #CCCCCC; }
+.form-dot.loss { background-color: #E63946; }
