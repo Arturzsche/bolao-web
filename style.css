@@ -75,8 +75,8 @@ input[type=number] { -moz-appearance: textfield; }
 .toast-notif { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: var(--text-dark); color: white; padding: 12px 24px; border-radius: 4px; font-weight: 700; display: none; z-index: 2000; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
 
 /* TELA DE LOGIN */
-.login-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: var(--br-blue); display: flex; justify-content: center; align-items: center; z-index: 9999; }
-.login-card { background: white; padding: 40px; border-radius: 12px; width: 90%; max-width: 400px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+.login-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: var(--bg-main); display: flex; justify-content: center; align-items: center; z-index: 9999; }
+.login-card { background: white; padding: 40px; border-radius: 12px; width: 90%; max-width: 400px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); }
 .input-field { width: 100%; padding: 15px; border: 1px solid #CCC; border-radius: 6px; font-size: 1.1rem; outline: none; margin-top: 5px; background: #FAFAFA; }
 .input-field:focus { border-color: var(--br-green); }
 .entry-input:disabled { background-color: #E0E0E0; color: #888; border-color: #CCC; cursor: not-allowed; }
@@ -88,14 +88,8 @@ input[type=number] { -moz-appearance: textfield; }
 /* TABELA GE */
 .table-wrapper { background: var(--bg-white); border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); overflow-x: auto; }
 .ge-table { width: 100%; border-collapse: collapse; text-align: center; }
-.ge-table th { background: #FFFFFF; font-size: 10px; color: #999; text-transform: uppercase; border-bottom: 2px solid #EEE; padding: 12px 5px; }
+.ge-table th { background: #FFFFFF; font-size: 11px; color: #999; text-transform: uppercase; border-bottom: 2px solid #EEE; padding: 12px 5px; }
 .ge-table td { padding: 12px 5px; border-bottom: 1px solid #F0F0F0; font-size: 14px; text-align: center; }
-.td-pts { font-weight: 800; font-size: 1rem; background: #F9F9F9; color: var(--text-dark); }
-.recent-form { display: flex; justify-content: center; gap: 4px; align-items: center; }
-.form-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
-.form-dot.win { background-color: var(--form-win); }
-.form-dot.draw { background-color: var(--form-draw); }
-.form-dot.loss { background-color: var(--form-loss); }
 
 @media (max-width: 400px) {
     .match-entry-row { grid-template-columns: 25px 28% 1fr 1fr 1fr 28% 40px; }

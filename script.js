@@ -27,14 +27,51 @@ const ALL_GAMES = [
 
 window.addEventListener('load', () => {
     const savedSession = localStorage.getItem('bolao_session');
+    
     if (savedSession) {
         currentUser = JSON.parse(savedSession);
         document.getElementById('login-screen').style.display = 'none';
         iniciarApp();
     } else {
+        // Verifica se há um usuário anterior gravado na saída (Sair)
+        const lastUserStr = localStorage.getItem('bolao_last_user');
         document.getElementById('login-screen').style.display = 'flex';
+        
+        if (lastUserStr) {
+            const lastUser = JSON.parse(lastUserStr);
+            document.getElementById('return-user-name').innerText = lastUser.name;
+            document.getElementById('login-card-return').style.display = 'block';
+            document.getElementById('login-card-default').style.display = 'none';
+        } else {
+            document.getElementById('login-card-return').style.display = 'none';
+            document.getElementById('login-card-default').style.display = 'block';
+        }
     }
 });
+
+function showDefaultLogin() {
+    document.getElementById('login-card-return').style.display = 'none';
+    document.getElementById('login-card-default').style.display = 'block';
+}
+
+async function loginAsLastUser() {
+    const lastUserStr = localStorage.getItem('bolao_last_user');
+    if(lastUserStr) {
+        const lastUser = JSON.parse(lastUserStr);
+        showLoading(true);
+        try {
+            const resp = await fetch(`${API_URL}/login`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: lastUser.name })
+            }).then(r => r.json());
+
+            if (resp.success) entrar(lastUser.name);
+        } catch (e) {
+            alert("Erro de conexão.");
+        }
+        showLoading(false);
+    }
+}
 
 async function realizarLogin() {
     const name = document.getElementById('login-name').value.trim();
@@ -76,7 +113,14 @@ function entrar(fullName) {
     iniciarApp();
 }
 
-function fazerLogout() { localStorage.removeItem('bolao_session'); location.reload(); }
+function fazerLogout() { 
+    // Guarda quem era a pessoa antes de desligar a sessão
+    if(currentUser) {
+        localStorage.setItem('bolao_last_user', JSON.stringify(currentUser));
+    }
+    localStorage.removeItem('bolao_session'); 
+    location.reload(); 
+}
 
 async function iniciarApp() {
     document.getElementById('display-user-name').innerText = currentUser.name;
@@ -84,20 +128,20 @@ async function iniciarApp() {
     
     if (currentUser.name === "Admin") {
         renderGames('admin-slip-container', 'admin');
-        
-        // 1. OCULTA A ABA DE PALPITES PARA O ADMIN
         const btnPalpites = document.querySelector('.tab-btn[onclick*="palpites"]');
         if (btnPalpites) btnPalpites.style.display = 'none';
         
-        // 2. MOSTRA A ABA DO GABARITO
         const btnAdmin = document.querySelector('.tab-btn[onclick*="admin"]');
         if (btnAdmin) btnAdmin.style.display = 'inline-block';
         
-        // 3. JOGA O ADMIN DIRETO PRA TELA DE GABARITO
         switchTab('admin');
     } else {
-        // SE FOR USUÁRIO COMUM, RENDERIZA OS PALPITES NORMALMENTE
         renderGames('mobile-slip-container', 'user');
+        
+        // RECUPERA A ABA EM QUE O USUÁRIO ESTAVA
+        let savedTab = localStorage.getItem('bolao_active_tab') || 'palpites';
+        if (savedTab === 'admin') savedTab = 'palpites'; // Proteção de segurança
+        switchTab(savedTab);
     }
 
     await carregarDadosDaNuvem();
@@ -198,52 +242,47 @@ function calculateAndRenderRanking() {
     if (!tbody) return;
 
     if (!allUsersData || allUsersData.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="9" style="padding: 20px; color: #999;">Nenhum participante registrado ainda.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="4" style="padding: 20px; color: #999;">Nenhum participante registrado ainda.</td></tr>`;
         return;
     }
 
     let ranking = [];
-    const safeAdminResults = adminResults || {}; // Garante que a tabela calcula mesmo sem gabarito
+    const safeAdminResults = adminResults || {};
 
     allUsersData.forEach(u => {
         if (u.name === "Admin") return;
         
-        let p = { name: u.name, pts: 0, v: 0, e: 0, d: 0, j: 0 };
+        // Ponto e Acertos (apenas 2 métricas agora)
+        let p = { name: u.name, pts: 0, acertos: 0 };
         const palps = u.jogos || {};
         
-        // Cruza palpites com o gabarito oficial (se existir)
         Object.keys(safeAdminResults).forEach(mId => {
             if(palps[mId]) {
-                p.j++;
                 const ph = parseInt(palps[mId].h), pa = parseInt(palps[mId].a);
                 const rh = parseInt(safeAdminResults[mId].h), ra = parseInt(safeAdminResults[mId].a);
-                if(ph === rh && pa === ra) { p.pts += 8; p.v++; }
-                else if((ph>pa && rh>ra) || (ph<pa && rh<ra) || (ph===pa && rh===ra)) { p.pts += 3; p.e++; }
-                else { p.d++; }
+                
+                if(ph === rh && pa === ra) { 
+                    p.pts += 8; 
+                    p.acertos++; // Conta como acerto
+                }
+                else if((ph>pa && rh>ra) || (ph<pa && rh<ra) || (ph===pa && rh===ra)) { 
+                    p.pts += 3; 
+                    p.acertos++; // Conta como acerto
+                }
             }
         });
-        
-        // Empurra o usuário para a lista da tabela, mesmo com 0 pontos
         ranking.push(p);
     });
 
-    ranking.sort((a, b) => b.pts - a.pts || b.v - a.v || b.e - a.e);
+    // Ordem de desempate: Quem tem mais pontos > Quem tem mais acertos gerais
+    ranking.sort((a, b) => b.pts - a.pts || b.acertos - a.acertos);
     
     tbody.innerHTML = ranking.map((r, i) => {
-        const aprov = r.j > 0 ? Math.round((r.pts / (r.j * 8)) * 100) : 0;
-        let bolinhas = '';
-        for(let k=0; k<5; k++) {
-            if (k < r.v) bolinhas += '<span class="form-dot win"></span>';
-            else if (k < r.v + r.e) bolinhas += '<span class="form-dot draw"></span>';
-            else bolinhas += '<span class="form-dot loss"></span>';
-        }
         return `<tr>
-            <td class="td-pos" style="color:var(--ge-blue); font-weight: 800; width: 40px;">${i+1}</td>
-            <td style="text-align: left; padding-left: 10px; font-weight: 600;">${r.name}</td>
-            <td class="td-pts">${r.pts}</td>
-            <td style="color: #666;">${r.j}</td><td style="color: #666;">${r.v}</td><td style="color: #666;">${r.e}</td><td style="color: #666;">${r.d}</td>
-            <td style="color: #666; font-weight: 700;">${aprov}%</td>
-            <td class="recent-form">${bolinhas}</td>
+            <td class="td-pos" style="color:var(--ge-blue); font-weight: 800;">${i+1}</td>
+            <td style="text-align: left; padding-left: 15px; font-weight: 600;">${r.name}</td>
+            <td class="td-pts" style="color:var(--text-dark); font-weight: 800; font-size: 1.1rem; background: #F9F9F9;">${r.pts}</td>
+            <td style="color: #06AA48; font-weight: 700;">${r.acertos}</td>
         </tr>`;
     }).join('');
 }
@@ -269,6 +308,9 @@ function switchTab(tab) {
     
     const activeBtn = document.querySelector(`.tab-btn[onclick*="${tab}"]`);
     if(activeBtn) activeBtn.classList.add('active');
+    
+    // GRAVA A ABA NO CELULAR PARA NÃO PERDER QUANDO DER F5
+    localStorage.setItem('bolao_active_tab', tab);
     
     if (tab === 'ranking') {
         carregarRankingSilencioso();
