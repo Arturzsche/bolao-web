@@ -4,25 +4,25 @@ let currentUser = null;
 let adminResults = {};
 let allUsersData = [];
 
-// OS 72 JOGOS REAIS
+// OS 72 JOGOS REAIS COM HORÁRIOS EXTRAÍDOS/MAPEADOS DO PDF
 const ALL_GAMES = [
-    ["11 DE JUNHO (QUI)", [{ id: 'g01', grp: "A", t1: "México", f1: "mx", t2: "África do Sul", f2: "za" }, { id: 'g02', grp: "A", t1: "Cor. do Sul", f1: "kr", t2: "Rep. Tcheca", f2: "cz" }]],
-    ["12 DE JUNHO (SEX)", [{ id: 'g03', grp: "B", t1: "Canadá", f1: "ca", t2: "Bósnia e H.", f2: "ba" }, { id: 'g04', grp: "D", t1: "EUA", f1: "us", t2: "Paraguai", f2: "py" }]],
-    ["13 DE JUNHO (SÁB)", [{ id: 'g05', grp: "B", t1: "Catar", f1: "qa", t2: "Suíça", f2: "ch" }, { id: 'g06', grp: "C", t1: "Brasil", f1: "br", t2: "Marrocos", f2: "ma" }, { id: 'g07', grp: "C", t1: "Haiti", f1: "ht", t2: "Escócia", f2: "gb-sct" }, { id: 'g08', grp: "D", t1: "Austrália", f1: "au", t2: "Turquia", f2: "tr" }]],
-    ["14 DE JUNHO (DOM)", [{ id: 'g09', grp: "E", t1: "Alemanha", f1: "de", t2: "Curaçao", f2: "cw" }, { id: 'g10', grp: "E", t1: "C. Marfim", f1: "ci", t2: "Equador", f2: "ec" }, { id: 'g11', grp: "F", t1: "Holanda", f1: "nl", t2: "Japão", f2: "jp" }, { id: 'g12', grp: "F", t1: "Suécia", f1: "se", t2: "Tunísia", f2: "tn" }]],
-    ["15 DE JUNHO (SEG)", [{ id: 'g13', grp: "G", t1: "Bélgica", f1: "be", t2: "Egito", f2: "eg" }, { id: 'g14', grp: "G", t1: "Irã", f1: "ir", t2: "Nova Zel.", f2: "nz" }, { id: 'g15', grp: "H", t1: "Espanha", f1: "es", t2: "Cabo Verde", f2: "cv" }, { id: 'g16', grp: "H", t1: "Arábia S.", f1: "sa", t2: "Uruguai", f2: "uy" }]],
-    ["16 DE JUNHO (TER)", [{ id: 'g17', grp: "I", t1: "França", f1: "fr", t2: "Senegal", f2: "sn" }, { id: 'g18', grp: "I", t1: "Iraque", f1: "iq", t2: "Noruega", f2: "no" }, { id: 'g19', grp: "J", t1: "Argentina", f1: "ar", t2: "Argélia", f2: "dz" }, { id: 'g20', grp: "J", t1: "Áustria", f1: "at", t2: "Jordânia", f2: "jo" }]],
-    ["17 DE JUNHO (QUA)", [{ id: 'g21', grp: "K", t1: "Portugal", f1: "pt", t2: "RD Congo", f2: "cd" }, { id: 'g22', grp: "K", t1: "Uzbequistão", f1: "uz", t2: "Colômbia", f2: "co" }, { id: 'g23', grp: "L", t1: "Inglaterra", f1: "gb-eng", t2: "Croácia", f2: "hr" }, { id: 'g24', grp: "L", t1: "Gana", f1: "gh", t2: "Panamá", f2: "pa" }]],
-    ["18 DE JUNHO (QUI)", [{ id: 'g25', grp: "A", t1: "México", f1: "mx", t2: "Cor. do Sul", f2: "kr" }, { id: 'g26', grp: "A", t1: "África do Sul", f1: "za", t2: "Rep. Tcheca", f2: "cz" }, { id: 'g27', grp: "B", t1: "Canadá", f1: "ca", t2: "Catar", f2: "qa" }, { id: 'g28', grp: "B", t1: "Bósnia e H.", f1: "ba", t2: "Suíça", f2: "ch" }]],
-    ["19 DE JUNHO (SEX)", [{ id: 'g29', grp: "C", t1: "Escócia", f1: "gb-sct", t2: "Marrocos", f2: "ma" }, { id: 'g30', grp: "C", t1: "Brasil", f1: "br", t2: "Haiti", f2: "ht" }, { id: 'g31', grp: "D", t1: "Austrália", f1: "au", t2: "Paraguai", f2: "py" }, { id: 'g32', grp: "D", t1: "EUA", f1: "us", t2: "Turquia", f2: "tr" }]],
-    ["20 DE JUNHO (SÁB)", [{ id: 'g33', grp: "E", t1: "Alemanha", f1: "de", t2: "C. Marfim", f2: "ci" }, { id: 'g34', grp: "E", t1: "Curaçao", f1: "cw", t2: "Equador", f2: "ec" }, { id: 'g35', grp: "F", t1: "Holanda", f1: "nl", t2: "Suécia", f2: "se" }, { id: 'g36', grp: "F", t1: "Japão", f1: "jp", t2: "Tunísia", f2: "tn" }]],
-    ["21 DE JUNHO (DOM)", [{ id: 'g37', grp: "G", t1: "Bélgica", f1: "be", t2: "Irã", f2: "ir" }, { id: 'g38', grp: "G", t1: "Egito", f1: "eg", t2: "Nova Zel.", f2: "nz" }, { id: 'g39', grp: "H", t1: "Espanha", f1: "es", t2: "Arábia S.", f2: "sa" }, { id: 'g40', grp: "H", t1: "Cabo Verde", f1: "cv", t2: "Uruguai", f2: "uy" }]],
-    ["22 DE JUNHO (SEG)", [{ id: 'g41', grp: "I", t1: "França", f1: "fr", t2: "Iraque", f2: "iq" }, { id: 'g42', grp: "I", t1: "Senegal", f1: "sn", t2: "Noruega", f2: "no" }, { id: 'g43', grp: "J", t1: "Argentina", f1: "ar", t2: "Áustria", f2: "at" }, { id: 'g44', grp: "J", t1: "Argélia", f1: "dz", t2: "Jordânia", f2: "jo" }]],
-    ["23 DE JUNHO (TER)", [{ id: 'g45', grp: "K", t1: "Portugal", f1: "pt", t2: "Uzbequistão", f2: "uz" }, { id: 'g46', grp: "K", t1: "RD Congo", f1: "cd", t2: "Colômbia", f2: "co" }, { id: 'g47', grp: "L", t1: "Inglaterra", f1: "gb-eng", t2: "Gana", f2: "gh" }, { id: 'g48', grp: "L", t1: "Croácia", f1: "hr", t2: "Panamá", f2: "pa" }]],
-    ["24 DE JUNHO (QUA)", [{ id: 'g49', grp: "A", t1: "México", f1: "mx", t2: "Rep. Tcheca", f2: "cz" }, { id: 'g50', grp: "A", t1: "África do Sul", f1: "za", t2: "Cor. do Sul", f2: "kr" }, { id: 'g51', grp: "B", t1: "Canadá", f1: "ca", t2: "Suíça", f2: "ch" }, { id: 'g52', grp: "B", t1: "Bósnia e H.", f1: "ba", t2: "Catar", f2: "qa" }, { id: 'g53', grp: "C", t1: "Escócia", f1: "gb-sct", t2: "Brasil", f2: "br" }, { id: 'g54', grp: "C", t1: "Marrocos", f1: "ma", t2: "Haiti", f2: "ht" }]],
-    ["25 DE JUNHO (QUI)", [{ id: 'g55', grp: "D", t1: "Turquia", f1: "tr", t2: "Paraguai", f2: "py" }, { id: 'g56', grp: "D", t1: "EUA", f1: "us", t2: "Austrália", f2: "au" }, { id: 'g57', grp: "E", t1: "Equador", f1: "ec", t2: "Alemanha", f2: "de" }, { id: 'g58', grp: "E", t1: "Curaçao", f1: "cw", t2: "C. Marfim", f2: "ci" }, { id: 'g59', grp: "F", t1: "Japão", f1: "jp", t2: "Suécia", f2: "se" }, { id: 'g60', grp: "F", t1: "Tunísia", f1: "tn", t2: "Holanda", f2: "nl" }]],
-    ["26 DE JUNHO (SEX)", [{ id: 'g61', grp: "G", t1: "Nova Zel.", f1: "nz", t2: "Bélgica", f2: "be" }, { id: 'g62', grp: "G", t1: "Egito", f1: "eg", t2: "Irã", f2: "ir" }, { id: 'g63', grp: "H", t1: "Cabo Verde", f1: "cv", t2: "Arábia S.", f2: "sa" }, { id: 'g64', grp: "H", t1: "Uruguai", f1: "uy", t2: "Espanha", f2: "es" }, { id: 'g65', grp: "I", t1: "Senegal", f1: "sn", t2: "Iraque", f2: "iq" }, { id: 'g66', grp: "I", t1: "Noruega", f1: "no", t2: "França", f2: "fr" }]],
-    ["27 DE JUNHO (SÁB)", [{ id: 'g67', grp: "J", t1: "Argélia", f1: "dz", t2: "Áustria", f2: "at" }, { id: 'g68', grp: "J", t1: "Jordânia", f1: "jo", t2: "Argentina", f2: "ar" }, { id: 'g69', grp: "K", t1: "RD Congo", f1: "cd", t2: "Uzbequistão", f2: "uz" }, { id: 'g70', grp: "K", t1: "Colômbia", f1: "co", t2: "Portugal", f2: "pt" }, { id: 'g71', grp: "L", t1: "Croácia", f1: "hr", t2: "Gana", f2: "gh" }, { id: 'g72', grp: "L", t1: "Panamá", f1: "pa", t2: "Inglaterra", f2: "gb-eng" }]]
+    ["11 DE JUNHO (QUI)", [{ id: 'g01', time: '17:00', grp: "A", t1: "México", f1: "mx", t2: "África do Sul", f2: "za" }, { id: 'g02', time: '21:00', grp: "A", t1: "Cor. do Sul", f1: "kr", t2: "Rep. Tcheca", f2: "cz" }]],
+    ["12 DE JUNHO (SEX)", [{ id: 'g03', time: '18:00', grp: "B", t1: "Canadá", f1: "ca", t2: "Bósnia e H.", f2: "ba" }, { id: 'g04', time: '21:00', grp: "D", t1: "EUA", f1: "us", t2: "Paraguai", f2: "py" }]],
+    ["13 DE JUNHO (SÁB)", [{ id: 'g05', time: '13:00', grp: "B", t1: "Catar", f1: "qa", t2: "Suíça", f2: "ch" }, { id: 'g06', time: '16:00', grp: "C", t1: "Brasil", f1: "br", t2: "Marrocos", f2: "ma" }, { id: 'g07', time: '19:00', grp: "C", t1: "Haiti", f1: "ht", t2: "Escócia", f2: "gb-sct" }, { id: 'g08', time: '22:00', grp: "D", t1: "Austrália", f1: "au", t2: "Turquia", f2: "tr" }]],
+    ["14 DE JUNHO (DOM)", [{ id: 'g09', time: '13:00', grp: "E", t1: "Alemanha", f1: "de", t2: "Curaçao", f2: "cw" }, { id: 'g10', time: '16:00', grp: "E", t1: "C. Marfim", f1: "ci", t2: "Equador", f2: "ec" }, { id: 'g11', time: '19:00', grp: "F", t1: "Holanda", f1: "nl", t2: "Japão", f2: "jp" }, { id: 'g12', time: '22:00', grp: "F", t1: "Suécia", f1: "se", t2: "Tunísia", f2: "tn" }]],
+    ["15 DE JUNHO (SEG)", [{ id: 'g13', time: '13:00', grp: "G", t1: "Bélgica", f1: "be", t2: "Egito", f2: "eg" }, { id: 'g14', time: '16:00', grp: "G", t1: "Irã", f1: "ir", t2: "Nova Zel.", f2: "nz" }, { id: 'g15', time: '19:00', grp: "H", t1: "Espanha", f1: "es", t2: "Cabo Verde", f2: "cv" }, { id: 'g16', time: '22:00', grp: "H", t1: "Arábia S.", f1: "sa", t2: "Uruguai", f2: "uy" }]],
+    ["16 DE JUNHO (TER)", [{ id: 'g17', time: '13:00', grp: "I", t1: "França", f1: "fr", t2: "Senegal", f2: "sn" }, { id: 'g18', time: '16:00', grp: "I", t1: "Iraque", f1: "iq", t2: "Noruega", f2: "no" }, { id: 'g19', time: '19:00', grp: "J", t1: "Argentina", f1: "ar", t2: "Argélia", f2: "dz" }, { id: 'g20', time: '22:00', grp: "J", t1: "Áustria", f1: "at", t2: "Jordânia", f2: "jo" }]],
+    ["17 DE JUNHO (QUA)", [{ id: 'g21', time: '13:00', grp: "K", t1: "Portugal", f1: "pt", t2: "RD Congo", f2: "cd" }, { id: 'g22', time: '16:00', grp: "K", t1: "Uzbequistão", f1: "uz", t2: "Colômbia", f2: "co" }, { id: 'g23', time: '19:00', grp: "L", t1: "Inglaterra", f1: "gb-eng", t2: "Croácia", f2: "hr" }, { id: 'g24', time: '22:00', grp: "L", t1: "Gana", f1: "gh", t2: "Panamá", f2: "pa" }]],
+    ["18 DE JUNHO (QUI)", [{ id: 'g25', time: '13:00', grp: "A", t1: "México", f1: "mx", t2: "Cor. do Sul", f2: "kr" }, { id: 'g26', time: '16:00', grp: "A", t1: "África do Sul", f1: "za", t2: "Rep. Tcheca", f2: "cz" }, { id: 'g27', time: '19:00', grp: "B", t1: "Canadá", f1: "ca", t2: "Catar", f2: "qa" }, { id: 'g28', time: '22:00', grp: "B", t1: "Bósnia e H.", f1: "ba", t2: "Suíça", f2: "ch" }]],
+    ["19 DE JUNHO (SEX)", [{ id: 'g29', time: '13:00', grp: "C", t1: "Escócia", f1: "gb-sct", t2: "Marrocos", f2: "ma" }, { id: 'g30', time: '16:00', grp: "C", t1: "Brasil", f1: "br", t2: "Haiti", f2: "ht" }, { id: 'g31', time: '19:00', grp: "D", t1: "Austrália", f1: "au", t2: "Paraguai", f2: "py" }, { id: 'g32', time: '22:00', grp: "D", t1: "EUA", f1: "us", t2: "Turquia", f2: "tr" }]],
+    ["20 DE JUNHO (SÁB)", [{ id: 'g33', time: '13:00', grp: "E", t1: "Alemanha", f1: "de", t2: "C. Marfim", f2: "ci" }, { id: 'g34', time: '16:00', grp: "E", t1: "Curaçao", f1: "cw", t2: "Equador", f2: "ec" }, { id: 'g35', time: '19:00', grp: "F", t1: "Holanda", f1: "nl", t2: "Suécia", f2: "se" }, { id: 'g36', time: '22:00', grp: "F", t1: "Japão", f1: "jp", t2: "Tunísia", f2: "tn" }]],
+    ["21 DE JUNHO (DOM)", [{ id: 'g37', time: '13:00', grp: "G", t1: "Bélgica", f1: "be", t2: "Irã", f2: "ir" }, { id: 'g38', time: '16:00', grp: "G", t1: "Egito", f1: "eg", t2: "Nova Zel.", f2: "nz" }, { id: 'g39', time: '19:00', grp: "H", t1: "Espanha", f1: "es", t2: "Arábia S.", f2: "sa" }, { id: 'g40', time: '22:00', grp: "H", t1: "Cabo Verde", f1: "cv", t2: "Uruguai", f2: "uy" }]],
+    ["22 DE JUNHO (SEG)", [{ id: 'g41', time: '13:00', grp: "I", t1: "França", f1: "fr", t2: "Iraque", f2: "iq" }, { id: 'g42', time: '16:00', grp: "I", t1: "Senegal", f1: "sn", t2: "Noruega", f2: "no" }, { id: 'g43', time: '19:00', grp: "J", t1: "Argentina", f1: "ar", t2: "Áustria", f2: "at" }, { id: 'g44', time: '22:00', grp: "J", t1: "Argélia", f1: "dz", t2: "Jordânia", f2: "jo" }]],
+    ["23 DE JUNHO (TER)", [{ id: 'g45', time: '13:00', grp: "K", t1: "Portugal", f1: "pt", t2: "Uzbequistão", f2: "uz" }, { id: 'g46', time: '16:00', grp: "K", t1: "RD Congo", f1: "cd", t2: "Colômbia", f2: "co" }, { id: 'g47', time: '19:00', grp: "L", t1: "Inglaterra", f1: "gb-eng", t2: "Gana", f2: "gh" }, { id: 'g48', time: '22:00', grp: "L", t1: "Croácia", f1: "hr", t2: "Panamá", f2: "pa" }]],
+    ["24 DE JUNHO (QUA)", [{ id: 'g49', time: '13:00', grp: "A", t1: "México", f1: "mx", t2: "Rep. Tcheca", f2: "cz" }, { id: 'g50', time: '13:00', grp: "A", t1: "África do Sul", f1: "za", t2: "Cor. do Sul", f2: "kr" }, { id: 'g51', time: '17:00', grp: "B", t1: "Canadá", f1: "ca", t2: "Suíça", f2: "ch" }, { id: 'g52', time: '17:00', grp: "B", t1: "Bósnia e H.", f1: "ba", t2: "Catar", f2: "qa" }, { id: 'g53', time: '21:00', grp: "C", t1: "Escócia", f1: "gb-sct", t2: "Brasil", f2: "br" }, { id: 'g54', time: '21:00', grp: "C", t1: "Marrocos", f1: "ma", t2: "Haiti", f2: "ht" }]],
+    ["25 DE JUNHO (QUI)", [{ id: 'g55', time: '13:00', grp: "D", t1: "Turquia", f1: "tr", t2: "Paraguai", f2: "py" }, { id: 'g56', time: '13:00', grp: "D", t1: "EUA", f1: "us", t2: "Austrália", f2: "au" }, { id: 'g57', time: '17:00', grp: "E", t1: "Equador", f1: "ec", t2: "Alemanha", f2: "de" }, { id: 'g58', time: '17:00', grp: "E", t1: "Curaçao", f1: "cw", t2: "C. Marfim", f2: "ci" }, { id: 'g59', time: '21:00', grp: "F", t1: "Japão", f1: "jp", t2: "Suécia", f2: "se" }, { id: 'g60', time: '21:00', grp: "F", t1: "Tunísia", f1: "tn", t2: "Holanda", f2: "nl" }]],
+    ["26 DE JUNHO (SEX)", [{ id: 'g61', time: '13:00', grp: "G", t1: "Nova Zel.", f1: "nz", t2: "Bélgica", f2: "be" }, { id: 'g62', time: '13:00', grp: "G", t1: "Egito", f1: "eg", t2: "Irã", f2: "ir" }, { id: 'g63', time: '17:00', grp: "H", t1: "Cabo Verde", f1: "cv", t2: "Arábia S.", f2: "sa" }, { id: 'g64', time: '17:00', grp: "H", t1: "Uruguai", f1: "uy", t2: "Espanha", f2: "es" }, { id: 'g65', time: '21:00', grp: "I", t1: "Senegal", f1: "sn", t2: "Iraque", f2: "iq" }, { id: 'g66', time: '21:00', grp: "I", t1: "Noruega", f1: "no", t2: "França", f2: "fr" }]],
+    ["27 DE JUNHO (SÁB)", [{ id: 'g67', time: '13:00', grp: "J", t1: "Argélia", f1: "dz", t2: "Áustria", f2: "at" }, { id: 'g68', time: '13:00', grp: "J", t1: "Jordânia", f1: "jo", t2: "Argentina", f2: "ar" }, { id: 'g69', time: '17:00', grp: "K", t1: "RD Congo", f1: "cd", t2: "Uzbequistão", f2: "uz" }, { id: 'g70', time: '17:00', grp: "K", t1: "Colômbia", f1: "co", t2: "Portugal", f2: "pt" }, { id: 'g71', time: '21:00', grp: "L", t1: "Croácia", f1: "hr", t2: "Gana", f2: "gh" }, { id: 'g72', time: '21:00', grp: "L", t1: "Panamá", f1: "pa", t2: "Inglaterra", f2: "gb-eng" }]]
 ];
 
 window.addEventListener('load', () => {
@@ -33,7 +33,6 @@ window.addEventListener('load', () => {
         document.getElementById('login-screen').style.display = 'none';
         iniciarApp();
     } else {
-        // Verifica se há um usuário anterior gravado na saída (Sair)
         const lastUserStr = localStorage.getItem('bolao_last_user');
         document.getElementById('login-screen').style.display = 'flex';
         
@@ -114,7 +113,6 @@ function entrar(fullName) {
 }
 
 function fazerLogout() { 
-    // Guarda quem era a pessoa antes de desligar a sessão
     if(currentUser) {
         localStorage.setItem('bolao_last_user', JSON.stringify(currentUser));
     }
@@ -138,9 +136,8 @@ async function iniciarApp() {
     } else {
         renderGames('mobile-slip-container', 'user');
         
-        // RECUPERA A ABA EM QUE O USUÁRIO ESTAVA
         let savedTab = localStorage.getItem('bolao_active_tab') || 'palpites';
-        if (savedTab === 'admin') savedTab = 'palpites'; // Proteção de segurança
+        if (savedTab === 'admin') savedTab = 'palpites'; 
         switchTab(savedTab);
     }
 
@@ -156,9 +153,14 @@ function renderGames(containerId, mode) {
         day[1].forEach(game => {
             const prefix = mode === 'user' ? 'u' : 'a';
             const onInput = mode === 'user' ? 'oninput="updateWinnerBadge(this)"' : '';
+            
+            // Alteração na Etiqueta do Grupo para incluir o Horário
             html += `
             <div class="match-entry-row">
-                <div class="entry-group-tag">${game.grp}</div>
+                <div class="entry-group-tag" style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
+                    <span>${game.grp}</span>
+                    <span style="font-size: 0.6rem; color: #555; background: #EAEAEA; padding: 3px 5px; border-radius: 4px; line-height: 1;">${game.time}</span>
+                </div>
                 <div class="entry-team-box home">${game.t1} <span class="fi fi-${game.f1}"></span></div>
                 <div class="entry-inputs-box">
                     <input type="number" inputmode="numeric" class="entry-input ${prefix}-h-${game.id}" data-match="${game.id}" ${onInput}>
@@ -252,7 +254,6 @@ function calculateAndRenderRanking() {
     allUsersData.forEach(u => {
         if (u.name === "Admin") return;
         
-        // Ponto e Acertos (apenas 2 métricas agora)
         let p = { name: u.name, pts: 0, acertos: 0 };
         const palps = u.jogos || {};
         
@@ -263,18 +264,17 @@ function calculateAndRenderRanking() {
                 
                 if(ph === rh && pa === ra) { 
                     p.pts += 8; 
-                    p.acertos++; // Conta como acerto
+                    p.acertos++; 
                 }
                 else if((ph>pa && rh>ra) || (ph<pa && rh<ra) || (ph===pa && rh===ra)) { 
                     p.pts += 3; 
-                    p.acertos++; // Conta como acerto
+                    p.acertos++; 
                 }
             }
         });
         ranking.push(p);
     });
 
-    // Ordem de desempate: Quem tem mais pontos > Quem tem mais acertos gerais
     ranking.sort((a, b) => b.pts - a.pts || b.acertos - a.acertos);
     
     tbody.innerHTML = ranking.map((r, i) => {
@@ -309,7 +309,6 @@ function switchTab(tab) {
     const activeBtn = document.querySelector(`.tab-btn[onclick*="${tab}"]`);
     if(activeBtn) activeBtn.classList.add('active');
     
-    // GRAVA A ABA NO CELULAR PARA NÃO PERDER QUANDO DER F5
     localStorage.setItem('bolao_active_tab', tab);
     
     if (tab === 'ranking') {
@@ -323,7 +322,6 @@ function showToast(msg) {
     t.innerText = msg; t.style.display = 'block'; setTimeout(() => t.style.display = 'none', 3000);
 }
 
-// --- SISTEMA DE ATUALIZAÇÃO EM TEMPO REAL ---
 async function carregarRankingSilencioso() {
     try {
         allUsersData = await fetch(`${API_URL}/users`).then(r => r.json());
