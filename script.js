@@ -29,7 +29,6 @@ window.addEventListener('load', () => {
     const savedSession = localStorage.getItem('bolao_session');
     if (savedSession) {
         currentUser = JSON.parse(savedSession);
-        // CORREÇÃO: Esconder a tela de login ao atualizar a página!
         document.getElementById('login-screen').style.display = 'none';
         iniciarApp();
     } else {
@@ -83,12 +82,24 @@ async function iniciarApp() {
     document.getElementById('display-user-name').innerText = currentUser.name;
     document.getElementById('main-app').style.display = 'block';
     
-    renderGames('mobile-slip-container', 'user');
-
     if (currentUser.name === "Admin") {
         renderGames('admin-slip-container', 'admin');
-        document.querySelector('.tab-btn[onclick*="admin"]').style.display = 'inline-block';
+        
+        // 1. OCULTA A ABA DE PALPITES PARA O ADMIN
+        const btnPalpites = document.querySelector('.tab-btn[onclick*="palpites"]');
+        if (btnPalpites) btnPalpites.style.display = 'none';
+        
+        // 2. MOSTRA A ABA DO GABARITO
+        const btnAdmin = document.querySelector('.tab-btn[onclick*="admin"]');
+        if (btnAdmin) btnAdmin.style.display = 'inline-block';
+        
+        // 3. JOGA O ADMIN DIRETO PRA TELA DE GABARITO
+        switchTab('admin');
+    } else {
+        // SE FOR USUÁRIO COMUM, RENDERIZA OS PALPITES NORMALMENTE
+        renderGames('mobile-slip-container', 'user');
     }
+
     await carregarDadosDaNuvem();
 }
 
@@ -122,8 +133,10 @@ function renderGames(containerId, mode) {
 async function carregarDadosDaNuvem() {
     showLoading(true);
     try {
-        const meusPalpites = await fetch(`${API_URL}/palpites/${currentUser.name}`).then(r => r.json());
-        if (meusPalpites && Object.keys(meusPalpites).length > 0) preencherEBloquearPalpites(meusPalpites);
+        if (currentUser.name !== "Admin") {
+            const meusPalpites = await fetch(`${API_URL}/palpites/${currentUser.name}`).then(r => r.json());
+            if (meusPalpites && Object.keys(meusPalpites).length > 0) preencherEBloquearPalpites(meusPalpites);
+        }
 
         adminResults = await fetch(`${API_URL}/palpites/Admin`).then(r => r.json());
         if (currentUser.name === "Admin" && adminResults) {
@@ -184,30 +197,33 @@ function calculateAndRenderRanking() {
     const tbody = document.getElementById('ranking-body-app');
     if (!tbody) return;
 
-    // CORREÇÃO: Previne tabela vazia
     if (!allUsersData || allUsersData.length === 0) {
         tbody.innerHTML = `<tr><td colspan="9" style="padding: 20px; color: #999;">Nenhum participante registrado ainda.</td></tr>`;
         return;
     }
 
     let ranking = [];
+    const safeAdminResults = adminResults || {}; // Garante que a tabela calcula mesmo sem gabarito
+
     allUsersData.forEach(u => {
         if (u.name === "Admin") return;
+        
         let p = { name: u.name, pts: 0, v: 0, e: 0, d: 0, j: 0 };
         const palps = u.jogos || {};
         
-        // Só soma pontos se houver gabarito
-        if (adminResults) {
-            Object.keys(adminResults).forEach(mId => {
-                if(palps[mId]) {
-                    p.j++;
-                    const ph = parseInt(palps[mId].h), pa = parseInt(palps[mId].a), rh = parseInt(adminResults[mId].h), ra = parseInt(adminResults[mId].a);
-                    if(ph === rh && pa === ra) { p.pts += 8; p.v++; }
-                    else if((ph>pa && rh>ra) || (ph<pa && rh<ra) || (ph===pa && rh===ra)) { p.pts += 3; p.e++; }
-                    else { p.d++; }
-                }
-            });
-        }
+        // Cruza palpites com o gabarito oficial (se existir)
+        Object.keys(safeAdminResults).forEach(mId => {
+            if(palps[mId]) {
+                p.j++;
+                const ph = parseInt(palps[mId].h), pa = parseInt(palps[mId].a);
+                const rh = parseInt(safeAdminResults[mId].h), ra = parseInt(safeAdminResults[mId].a);
+                if(ph === rh && pa === ra) { p.pts += 8; p.v++; }
+                else if((ph>pa && rh>ra) || (ph<pa && rh<ra) || (ph===pa && rh===ra)) { p.pts += 3; p.e++; }
+                else { p.d++; }
+            }
+        });
+        
+        // Empurra o usuário para a lista da tabela, mesmo com 0 pontos
         ranking.push(p);
     });
 
@@ -247,8 +263,12 @@ function updateWinnerBadge(input) {
 function switchTab(tab) {
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    document.getElementById('view-' + tab).classList.add('active');
-    document.querySelector(`.tab-btn[onclick*="${tab}"]`).classList.add('active');
+    
+    const targetView = document.getElementById('view-' + tab);
+    if(targetView) targetView.classList.add('active');
+    
+    const activeBtn = document.querySelector(`.tab-btn[onclick*="${tab}"]`);
+    if(activeBtn) activeBtn.classList.add('active');
     
     if (tab === 'ranking') {
         carregarRankingSilencioso();
