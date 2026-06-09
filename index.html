@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bolão 2026 | Ficha e Tabela</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/lipis/flag-icons@7.2.2/css/flag-icons.min.css"/>
+    
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="ge-header">
+    <div class="logo-text">BOLÃO<span>26</span></div>
+    <div class="header-right">
+        <i class="ph-bold ph-list"></i>
+    </div>
+</header>
+
+<nav class="tabs">
+    <button class="tab-btn active" onclick="switchTab('palpites')">Palpites</button>
+    <button class="tab-btn" onclick="switchTab('ranking')">Classificação</button>
+    <button class="tab-btn" onclick="switchTab('admin')">Gabarito</button>
+</nav>
+
+<div class="app-content">
+    
+    <section id="view-palpites" class="view active">
+        <div class="user-selector-card">
+            <label>👤 Selecione seu nome na partida:</label>
+            <div class="selector-row">
+                <select id="select-active-user" onchange="loadUserPalpites()">
+                    <option value="p1">Artur</option>
+                    <option value="p2">João</option>
+                    <option value="p3">Maria</option>
+                    <option value="p4">Carlos</option>
+                </select>
+            </div>
+        </div>
+
+        <div id="mobile-slip-container"></div>
+        
+        <button class="btn-float-save" onclick="savePalpites()"><i class="ph-fill ph-check-circle"></i> Salvar Palpites</button>
+    </section>
+
+    <section id="view-ranking" class="view">
+        <div class="table-wrapper">
+            <table class="ge-table">
+                <thead>
+                    <tr>
+                        <th>POS</th>
+                        <th style="text-align: left; padding-left: 15px;">PARTICIPANTE</th>
+                        <th title="Pontos">P</th>
+                        <th title="Jogos">J</th>
+                        <th title="Vitórias (Exato)">V</th>
+                        <th title="Empates (Tendência)">E</th>
+                        <th title="Derrotas (Erros)">D</th>
+                    </tr>
+                </thead>
+                <tbody id="ranking-body">
+                    </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section id="view-admin" class="view">
+        <div class="admin-warning">
+            <strong>Área do Organizador:</strong> Lance aqui os placares reais. A classificação será atualizada automaticamente para todos.
+        </div>
+        
+        <div id="admin-slip-container"></div>
+        
+        <button class="btn-float-save" style="background: var(--ge-blue);" onclick="saveAdminResults()"><i class="ph-fill ph-upload-simple"></i> Publicar Gabarito</button>
+    </section>
+
+</div>
+
+<div id="toast-notif" class="toast-notif">Operação realizada com sucesso!</div>
+
+<script src="script.js"></script>
+</body>
+</html>

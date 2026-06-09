@@ -1,0 +1,92 @@
+:root {
+    /* Cores Oficiais: Brasil e Portal GE */
+    --br-green: #009C3B; 
+    --br-yellow: #FFDF00;
+    --ge-blue: #002776; 
+    --bg-body: #F4F4F4;
+    --white: #FFFFFF;
+    --text-main: #333333;
+    --border-light: #EAEAEA;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Open Sans', sans-serif; background-color: var(--bg-body); color: var(--text-main); padding-bottom: 90px; }
+
+/* Header GE Premium */
+.ge-header { 
+    background: var(--br-green); color: var(--white); padding: 15px 20px; 
+    display: flex; align-items: center; justify-content: space-between; 
+    position: sticky; top: 0; z-index: 100; box-shadow: 0 4px 6px rgba(0,0,0,0.1); 
+}
+.logo-text { font-size: 1.5rem; font-weight: 800; letter-spacing: -0.5px; text-transform: uppercase;}
+.logo-text span { color: var(--br-yellow); }
+.header-right i { font-size: 1.5rem; cursor: pointer; }
+
+/* Abas de Navegação */
+.tabs { background: var(--white); display: flex; justify-content: center; border-bottom: 1px solid var(--border-light); }
+.tab-btn { flex: 1; padding: 15px 5px; border: none; background: none; font-weight: 700; font-size: 0.85rem; cursor: pointer; color: #777; border-bottom: 3px solid transparent; text-transform: uppercase; transition: 0.2s; }
+.tab-btn.active { color: var(--ge-blue); border-bottom-color: var(--ge-blue); }
+
+.app-content { max-width: 900px; margin: 20px auto; padding: 0 10px; }
+.view { display: none; }
+.view.active { display: block; }
+
+/* Selector Card */
+.user-selector-card { background: var(--white); padding: 15px; border-radius: 6px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+.user-selector-card label { font-weight: 700; font-size: 0.9rem; color: var(--ge-blue); display: block; margin-bottom: 8px; }
+.user-selector-card select { width: 100%; padding: 12px; border: 1px solid #CCC; border-radius: 4px; font-size: 1rem; outline: none; font-weight: 600; }
+
+/* Ficha Digital (Idêntica ao Papel) */
+.day-container { margin-bottom: 25px; border-radius: 6px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); background: var(--white); overflow: hidden; }
+.day-title-bar { background: var(--ge-blue); color: var(--br-yellow); text-align: center; padding: 8px; font-weight: 800; font-size: 0.85rem; text-transform: uppercase; }
+
+.match-entry-row { display: grid; grid-template-columns: 30px 25% 1fr 1fr 1fr 25% 55px; align-items: center; padding: 10px 5px; border-bottom: 1px solid #EEE; }
+.match-entry-row:last-child { border-bottom: none; }
+
+.entry-group-tag { color: #999; font-weight: 800; font-size: 0.75rem; text-align: center; }
+
+.entry-team-box { display: flex; align-items: center; gap: 6px; font-weight: 700; font-size: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.entry-team-box.home { justify-content: flex-end; }
+.entry-team-box.away { justify-content: flex-start; }
+.flag-icon { font-size: 1.1rem; border-radius: 2px; box-shadow: 0 1px 2px rgba(0,0,0,0.2); }
+
+/* Caixas de Placar Quadradas e Sem Setas */
+.entry-inputs-box { display: flex; justify-content: center; align-items: center; gap: 4px; }
+.entry-input { width: 35px; height: 35px; text-align: center; font-size: 1.2rem; font-weight: 800; border: 1px solid #CCC; border-radius: 4px; outline: none; color: var(--ge-blue); background: #FAFAFA; }
+.entry-input:focus { border-color: var(--br-green); background: var(--white); box-shadow: 0 0 0 2px rgba(0, 156, 59, 0.2); }
+.entry-vs { color: #999; font-size: 0.75rem; font-weight: 800; }
+
+/* Esconder setinhas de inputs tipo number */
+input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+input[type=number] { -moz-appearance: textfield; }
+
+/* V/E Badge */
+.entry-ve-box { display: flex; align-items: center; justify-content: flex-end; padding-right: 5px;}
+.entry-ve-badge { font-size: 0.7rem; font-weight: 700; color: #666; background: #EEE; padding: 4px 8px; border-radius: 4px; white-space: nowrap; }
+.entry-ve-badge.win-a { color: white; background: var(--br-green); }
+.entry-ve-badge.win-b { color: white; background: var(--ge-blue); }
+.entry-ve-badge.draw { color: white; background: #666; }
+
+/* Tabela de Classificação GE */
+.table-wrapper { background: var(--white); border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); overflow-x: auto; }
+.ge-table { width: 100%; border-collapse: collapse; text-align: center; }
+.ge-table th { font-size: 11px; color: #888; font-weight: 700; padding: 12px 5px; border-bottom: 1px solid var(--border-light); background: #F9F9F9; }
+.ge-table td { padding: 15px 5px; font-size: 14px; border-bottom: 1px solid var(--border-light); font-weight: 600; color: var(--text-main); }
+.td-pos { font-weight: 800; color: var(--ge-blue); }
+.td-pts { font-weight: 800; color: var(--ge-blue); font-size: 1.1rem; background: #F9F9F9; }
+
+/* Botão Flutuante */
+.btn-float-save { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--br-green); color: white; border: none; padding: 15px 40px; border-radius: 50px; font-weight: 800; font-size: 1rem; cursor: pointer; box-shadow: 0 6px 20px rgba(0,0,0,0.3); z-index: 1000; width: 90%; max-width: 450px; text-transform: uppercase; }
+.btn-float-save:active { transform: translateX(-50%) scale(0.97); }
+
+/* Avisos e Toast */
+.admin-warning { background: #fee2e2; color: #ef4444; padding: 12px; border-radius: 6px; font-size: 0.85rem; margin-bottom: 20px; border: 1px solid #fca5a5; }
+.toast-notif { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: var(--text-main); color: white; padding: 12px 24px; border-radius: 4px; font-weight: 700; display: none; z-index: 2000; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+
+/* Responsividade Mobile Extrema */
+@media (max-width: 400px) {
+    .match-entry-row { grid-template-columns: 25px 28% 1fr 1fr 1fr 28% 40px; }
+    .entry-team-box { font-size: 0.75rem; }
+    .entry-input { width: 30px; height: 30px; font-size: 1rem; }
+    .entry-ve-badge { padding: 2px 4px; font-size: 0.65rem; }
+}
