@@ -4,7 +4,7 @@ let currentUser = null;
 let adminResults = {};
 let allUsersData = [];
 
-// OS 72 JOGOS REAIS COM OS HORÁRIOS CORRIGIDOS
+// OS 72 JOGOS REAIS COM OS HORÁRIOS
 const ALL_GAMES = [
     ["11 DE JUNHO (QUI)", [
         { id: 'g01', time: '16:00', grp: "A", t1: "México", f1: "mx", t2: "África do Sul", f2: "za" },
@@ -318,24 +318,40 @@ function updateMatchRowColor(inputElement) {
     }
 }
 
+// ----------------------------------------------------
+// NÚCLEO BLINDADO: REQUISIÇÕES PROTEGIDAS CONTRA ERROS
+// ----------------------------------------------------
 async function carregarDadosDaNuvem() {
     showLoading(true);
-    try {
-        if (currentUser.name !== "Admin") {
-            const meusPalpites = await fetch(`${API_URL}/palpites/${currentUser.name}`).then(r => r.json());
-            if (meusPalpites && Object.keys(meusPalpites).length > 0) preencherPalpitesAtuais(meusPalpites);
-        }
+    
+    // 1. Busca Palpites do Usuário (Protegido contra espaços no nome)
+    if (currentUser.name !== "Admin") {
+        try {
+            const urlSegura = `${API_URL}/palpites/${encodeURIComponent(currentUser.name)}`;
+            const meusPalpites = await fetch(urlSegura).then(r => r.json());
+            if (meusPalpites && !meusPalpites.error) preencherPalpitesAtuais(meusPalpites);
+        } catch(e) { console.error("Erro ao puxar palpites pessoais"); }
+    }
 
+    // 2. Busca Gabarito do Admin
+    try {
         adminResults = await fetch(`${API_URL}/palpites/Admin`).then(r => r.json());
-        if (currentUser.name === "Admin" && adminResults) {
+        if (currentUser.name === "Admin" && adminResults && !adminResults.error) {
             Object.keys(adminResults).forEach(mId => {
                 const h = document.querySelector(`.a-h-${mId}`); const a = document.querySelector(`.a-a-${mId}`);
                 if(h && a) { h.value = adminResults[mId].h; a.value = adminResults[mId].a; updateMatchRowColor(h); }
             });
         }
-        allUsersData = await fetch(`${API_URL}/users`).then(r => r.json());
-        calculateAndRenderRanking();
-    } catch(e) { console.error(e); }
+    } catch(e) { console.error("Erro ao puxar gabarito"); }
+
+    // 3. Busca Todos os Usuários
+    try {
+        const usersResp = await fetch(`${API_URL}/users`).then(r => r.json());
+        if(Array.isArray(usersResp)) allUsersData = usersResp;
+    } catch(e) { console.error("Erro ao puxar tabela de usuários"); }
+
+    // 4. Força o desenho da tabela, garantindo que não fique em branco
+    calculateAndRenderRanking();
     showLoading(false);
 }
 
@@ -380,7 +396,8 @@ function calculateAndRenderRanking() {
     const tbody = document.getElementById('ranking-body-app');
     if (!tbody) return;
 
-    if (!allUsersData || allUsersData.length === 0) {
+    // Proteção: Se a lista for vazia, invalida, nula, ou só tiver o Admin, exibe mensagem vazia!
+    if (!Array.isArray(allUsersData) || allUsersData.length === 0 || (allUsersData.length === 1 && allUsersData[0].name === "Admin")) {
         tbody.innerHTML = `<tr><td colspan="4" style="padding: 20px; color: #999;">Nenhum participante registrado ainda.</td></tr>`;
         return;
     }
@@ -389,16 +406,18 @@ function calculateAndRenderRanking() {
     const safeAdminResults = adminResults || {};
 
     allUsersData.forEach(u => {
-        if (u.name === "Admin") return;
+        if (!u || !u.name || u.name === "Admin") return;
         let p = { name: u.name, pts: 0, acertos: 0 };
         const palps = u.jogos || {};
         
         Object.keys(safeAdminResults).forEach(mId => {
-            if(palps[mId]) {
+            if(palps[mId] && safeAdminResults[mId]) {
                 const ph = parseInt(palps[mId].h), pa = parseInt(palps[mId].a);
                 const rh = parseInt(safeAdminResults[mId].h), ra = parseInt(safeAdminResults[mId].a);
-                if(ph === rh && pa === ra) { p.pts += 8; p.acertos++; }
-                else if((ph>pa && rh>ra) || (ph<pa && rh<ra) || (ph===pa && rh===ra)) { p.pts += 3; p.acertos++; }
+                if(!isNaN(ph) && !isNaN(pa) && !isNaN(rh) && !isNaN(ra)) {
+                    if(ph === rh && pa === ra) { p.pts += 8; p.acertos++; }
+                    else if((ph>pa && rh>ra) || (ph<pa && rh<ra) || (ph===pa && rh===ra)) { p.pts += 3; p.acertos++; }
+                }
             }
         });
         ranking.push(p);
@@ -436,8 +455,12 @@ function showToast(msg) {
 
 async function carregarRankingSilencioso() {
     try {
-        allUsersData = await fetch(`${API_URL}/users`).then(r => r.json());
-        adminResults = await fetch(`${API_URL}/palpites/Admin`).then(r => r.json());
+        const usersResp = await fetch(`${API_URL}/users`).then(r => r.json());
+        if(Array.isArray(usersResp)) allUsersData = usersResp;
+        
+        const adminResp = await fetch(`${API_URL}/palpites/Admin`).then(r => r.json());
+        if(adminResp && !adminResp.error) adminResults = adminResp;
+        
         calculateAndRenderRanking();
     } catch(e) {}
 }
