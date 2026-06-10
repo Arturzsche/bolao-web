@@ -4,7 +4,7 @@ let currentUser = null;
 let adminResults = {};
 let allUsersData = [];
 
-// OS 72 JOGOS REAIS COM HORÁRIOS CORRETOS
+// OS 72 JOGOS REAIS COM OS HORÁRIOS CORRIGIDOS
 const ALL_GAMES = [
     ["11 DE JUNHO (QUI)", [
         { id: 'g01', time: '16:00', grp: "A", t1: "México", f1: "mx", t2: "África do Sul", f2: "za" },
@@ -228,25 +228,29 @@ async function iniciarApp() {
     await carregarDadosDaNuvem();
 }
 
-// LÓGICA DE TEMPO: Analisa se o jogo está Aberto, Fechado (Futuro) ou Encerrado (Passado)
-function getMatchState(dayStr, timeStr) {
+// ----------------------------------------------------
+// MOTOR DE TEMPO E CRONÔMETRO
+// ----------------------------------------------------
+
+function parseKickoff(dayStr, timeStr) {
     const match = dayStr.match(/(\d+)\s+DE\s+([A-Z]+)/i);
-    if(!match) return 'open';
+    if(!match) return Date.now();
     
     const day = parseInt(match[1]);
-    const monthStr = match[2].toUpperCase();
-    let month = 5; // Junho é o mês 5 no JS (0-indexado)
-    if(monthStr === "JULHO") month = 6;
-    
+    const month = match[2].toUpperCase() === "JULHO" ? 6 : 5; // Jun=5, Jul=6
     const [hours, minutes] = timeStr.split(':').map(Number);
-    const kickoff = new Date(2026, month, day, hours, minutes, 0);
     
-    const openTime = new Date(kickoff);
-    openTime.setHours(0, 0, 0, 0); // Define a abertura para as 00:00 daquele dia
+    return new Date(2026, month, day, hours, minutes, 0).getTime();
+}
+
+function getMatchState(dayStr, timeStr) {
+    const kickoffMs = parseKickoff(dayStr, timeStr);
+    const openTime = new Date(kickoffMs);
+    openTime.setHours(0, 0, 0, 0); 
     
-    const now = new Date();
-    if (now < openTime) return 'early'; // Ainda não é o dia do jogo
-    if (now >= kickoff) return 'late';  // O jogo já começou
+    const now = Date.now();
+    if (now < openTime.getTime()) return 'early'; // Dia ainda não chegou
+    if (now >= kickoffMs) return 'late';  // Jogo já começou
     return 'open'; // O dia do jogo chegou e a bola ainda não rolou
 }
 
@@ -261,15 +265,15 @@ function renderGames(containerId, mode) {
         day[1].forEach(game => {
             const prefix = mode === 'user' ? 'u' : 'a';
             const state = getMatchState(day[0], game.time);
+            const kickoffMs = parseKickoff(day[0], game.time);
             
-            // O Admin ignora bloqueios de tempo para poder preencher o gabarito de jogos passados
             const isDisabled = (mode === 'user' && state !== 'open') ? 'disabled' : '';
             
             let lockIcon = '';
             if (mode === 'user') {
                 if (state === 'early') lockIcon = `<span class="lock-status early"><i class="ph-fill ph-lock-key"></i> Abre 00h</span>`;
                 else if (state === 'late') lockIcon = `<span class="lock-status late"><i class="ph-fill ph-lock-key"></i> Fechado</span>`;
-                else lockIcon = `<span class="lock-status open"><i class="ph-fill ph-lock-key-open"></i> Aberto</span>`;
+                else lockIcon = `<span class="lock-status open countdown-timer" data-match="${game.id}" data-kickoff="${kickoffMs}"><i class="ph-bold ph-clock"></i> ...</span>`;
             }
 
             const onInput = `oninput="updateMatchRowColor(this)"`;
@@ -295,7 +299,6 @@ function renderGames(containerId, mode) {
     container.innerHTML = html;
 }
 
-// Aplica as cores de fundo (Verde ou Cinza) ao preencher o placar
 function updateMatchRowColor(inputElement) {
     const mId = inputElement.getAttribute('data-match');
     const hInput = document.querySelector(`.u-h-${mId}`) || document.querySelector(`.a-h-${mId}`);
@@ -347,7 +350,6 @@ function preencherPalpitesAtuais(palpitesSalvos) {
     });
 }
 
-// Salva todos os palpites que estiverem preenchidos na tela (mesmo os que já foram bloqueados pelo tempo)
 async function salvarNoMongo() {
     showLoading(true);
     let palpitesParaSalvar = {};
@@ -437,10 +439,47 @@ async function carregarRankingSilencioso() {
         allUsersData = await fetch(`${API_URL}/users`).then(r => r.json());
         adminResults = await fetch(`${API_URL}/palpites/Admin`).then(r => r.json());
         calculateAndRenderRanking();
-    } catch(e) { console.log("Aguardando..."); }
+    } catch(e) {}
 }
 
 setInterval(() => {
     const viewRanking = document.getElementById('view-ranking');
     if (viewRanking && viewRanking.classList.contains('active')) carregarRankingSilencioso();
 }, 10000);
+
+// ==========================================
+// LOOP DO CRONÔMETRO (RODA A CADA 1 SEGUNDO)
+// ==========================================
+setInterval(() => {
+    const timers = document.querySelectorAll('.countdown-timer');
+    const now = Date.now();
+    
+    timers.forEach(timer => {
+        const kickoff = parseInt(timer.getAttribute('data-kickoff'));
+        const mId = timer.getAttribute('data-match');
+        const diff = kickoff - now;
+
+        if (diff <= 0) {
+            timer.classList.remove('open', 'countdown-timer');
+            timer.classList.add('late');
+            timer.innerHTML = `<i class="ph-fill ph-lock-key"></i> Fechado`;
+            
+            if (currentUser && currentUser.name !== "Admin") {
+                const hInput = document.querySelector(`.u-h-${mId}`);
+                const aInput = document.querySelector(`.u-a-${mId}`);
+                if(hInput) hInput.disabled = true;
+                if(aInput) aInput.disabled = true;
+            }
+        } else {
+            const h = Math.floor(diff / (1000 * 60 * 60));
+            const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            const s = Math.floor((diff % (1000 * 60)) / 1000);
+            
+            let timeText = "";
+            if (h > 0) timeText += `${h}h `;
+            timeText += `${m.toString().padStart(2, '0')}m ${s.toString().padStart(2, '0')}s`;
+            
+            timer.innerHTML = `<i class="ph-bold ph-clock"></i> ${timeText}`;
+        }
+    });
+}, 1000);

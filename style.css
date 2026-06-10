@@ -42,10 +42,10 @@ body {
 .day-container { margin-bottom: 25px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); background: var(--bg-white); overflow: hidden; }
 .day-title-bar { background: var(--br-blue); color: var(--br-yellow); text-align: center; padding: 10px; font-weight: 800; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px; }
 
-/* O NOVO LAYOUT DO JOGO COM CORES DINÂMICAS */
+/* LAYOUT DO JOGO COM CORES DINÂMICAS */
 .match-entry-row { 
     display: grid; 
-    grid-template-columns: 65px 1fr auto 1fr; /* Removida a coluna do V/E, mais espaço para os times */
+    grid-template-columns: 65px 1fr auto 1fr; 
     align-items: center; 
     gap: 12px;
     padding: 15px 10px; 
@@ -55,7 +55,7 @@ body {
 }
 .match-entry-row:last-child { border-bottom: none; }
 
-/* FUNDOS COLORIDOS (Vitória = Verde, Empate = Cinza) */
+/* FUNDOS COLORIDOS */
 .match-entry-row.win-match { background-color: rgba(6, 170, 72, 0.08); border-left: 4px solid #06AA48; }
 .match-entry-row.draw-match { background-color: #F2F2F2; border-left: 4px solid #999; }
 
@@ -63,8 +63,8 @@ body {
 .group-letter { color: #999; font-weight: 800; font-size: 0.85rem; }
 .match-time { color: var(--br-blue); font-size: 0.95rem; font-weight: 800; margin-top: 2px; }
 
-/* ESTILOS DE BLOQUEIO (Cadeados) */
-.lock-status { font-size: 0.6rem; font-weight: 800; margin-top: 4px; display: flex; align-items: center; gap: 3px; text-transform: uppercase; text-align: center; }
+/* ESTILOS DE BLOQUEIO (Cadeados com números que não tremem) */
+.lock-status { font-size: 0.6rem; font-weight: 800; margin-top: 4px; display: flex; align-items: center; gap: 3px; text-transform: uppercase; text-align: center; font-variant-numeric: tabular-nums; }
 .lock-status.early { color: #F59E0B; } /* Laranja: Abre depois */
 .lock-status.open { color: #10B981; }  /* Verde: Aberto */
 .lock-status.late { color: #EF4444; }  /* Vermelho: Encerrado */
@@ -73,7 +73,7 @@ body {
 .entry-team-box.home { justify-content: flex-end; text-align: right; }
 .entry-team-box.away { justify-content: flex-start; text-align: left; }
 
-/* BANDEIRAS FORÇADAS A TEREM O MESMO TAMANHO */
+/* BANDEIRAS FIXAS NO MESMO TAMANHO */
 .fi { 
     width: 26px !important; 
     height: 18px !important; 
@@ -95,7 +95,7 @@ body {
 input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 input[type=number] { -moz-appearance: textfield; }
 
-/* BOTÃO SALVAR AGORA SEMPRE FIXO PARA MÚLTIPLOS SALVAMENTOS */
+/* BOTÃO SALVAR AGORA SEMPRE FIXO */
 .btn-float-save { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--br-green); color: white; border: none; padding: 15px 40px; border-radius: 50px; font-weight: 800; font-size: 1rem; cursor: pointer; box-shadow: 0 6px 20px rgba(0,0,0,0.3); z-index: 1000; width: 90%; max-width: 450px; text-transform: uppercase; transition: 0.2s; }
 .btn-float-save:active { transform: translateX(-50%) scale(0.97); }
 
