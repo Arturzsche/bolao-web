@@ -4,7 +4,7 @@ let currentUser = null;
 let adminResults = {};
 let allUsersData = [];
 
-// OS 72 JOGOS REAIS COM OS HORÁRIOS CORRIGIDOS
+// OS 72 JOGOS REAIS
 const ALL_GAMES = [
     ["11 DE JUNHO (QUI)", [
         { id: 'g01', time: '16:00', grp: "A", t1: "México", f1: "mx", t2: "África do Sul", f2: "za" },
@@ -229,7 +229,7 @@ async function iniciarApp() {
 }
 
 // ----------------------------------------------------
-// MOTOR DE TEMPO E CRONÔMETRO
+// MOTOR DE TEMPO E CRONÔMETRO (ATUALIZADO)
 // ----------------------------------------------------
 
 function parseKickoff(dayStr, timeStr) {
@@ -243,15 +243,14 @@ function parseKickoff(dayStr, timeStr) {
     return new Date(2026, month, day, hours, minutes, 0).getTime();
 }
 
-function getMatchState(dayStr, timeStr) {
-    const kickoffMs = parseKickoff(dayStr, timeStr);
-    const openTime = new Date(kickoffMs);
-    openTime.setHours(0, 0, 0, 0); 
-    
+function getMatchState(kickoffMs) {
     const now = Date.now();
-    if (now < openTime.getTime()) return 'early'; 
-    if (now >= kickoffMs) return 'late';  
-    return 'open'; 
+    const openTime = new Date(kickoffMs);
+    openTime.setHours(0, 0, 0, 0); // 00h do dia do jogo
+    
+    if (now >= kickoffMs) return 'late'; // Já começou (Fechado)
+    if (now >= openTime.getTime()) return 'countdown'; // É o dia do jogo (Mostra cronômetro)
+    return 'future'; // Falta mais de um dia (Aberto, mas sem cronômetro)
 }
 
 function renderGames(containerId, mode) {
@@ -264,16 +263,21 @@ function renderGames(containerId, mode) {
         
         day[1].forEach(game => {
             const prefix = mode === 'user' ? 'u' : 'a';
-            const state = getMatchState(day[0], game.time);
             const kickoffMs = parseKickoff(day[0], game.time);
+            const state = getMatchState(kickoffMs);
             
-            const isDisabled = (mode === 'user' && state !== 'open') ? 'disabled' : '';
+            const isDisabled = (mode === 'user' && state === 'late') ? 'disabled' : '';
             
             let lockIcon = '';
             if (mode === 'user') {
-                if (state === 'early') lockIcon = `<span class="lock-status early"><i class="ph-fill ph-lock-key"></i> Abre 00h</span>`;
-                else if (state === 'late') lockIcon = `<span class="lock-status late"><i class="ph-fill ph-lock-key"></i> Fechado</span>`;
-                else lockIcon = `<span class="lock-status open countdown-timer" data-match="${game.id}" data-kickoff="${kickoffMs}"><i class="ph-bold ph-clock"></i> ...</span>`;
+                if (state === 'late') {
+                    lockIcon = `<span class="lock-status late"><i class="ph-fill ph-lock-key"></i> Fechado</span>`;
+                } else if (state === 'countdown') {
+                    lockIcon = `<span class="lock-status open countdown-timer" data-match="${game.id}" data-kickoff="${kickoffMs}"><i class="ph-bold ph-clock"></i> ...</span>`;
+                } else {
+                    // Jogos no futuro agora ficam Abertos imediatamente
+                    lockIcon = `<span class="lock-status open"><i class="ph-fill ph-check-circle"></i> Aberto</span>`;
+                }
             }
 
             const onInput = `oninput="updateMatchRowColor(this)"`;
@@ -323,7 +327,7 @@ function updateMatchRowColor(inputElement) {
 // ----------------------------------------------------
 async function carregarDadosDaNuvem() {
     showLoading(true);
-    const timestamp = Date.now(); // Força o link a ser único a cada execução
+    const timestamp = Date.now(); 
     
     if (currentUser.name !== "Admin") {
         try {
@@ -352,6 +356,9 @@ async function carregarDadosDaNuvem() {
     showLoading(false);
 }
 
+// ----------------------------------------------------
+// LÓGICA DE BLOQUEIO DOS PALPITES JÁ SALVOS
+// ----------------------------------------------------
 function preencherPalpitesAtuais(palpitesSalvos) {
     Object.keys(palpitesSalvos).forEach(mId => {
         const h = document.querySelector(`.u-h-${mId}`); const a = document.querySelector(`.u-a-${mId}`);
@@ -359,6 +366,10 @@ function preencherPalpitesAtuais(palpitesSalvos) {
             h.value = palpitesSalvos[mId].h; 
             a.value = palpitesSalvos[mId].a; 
             updateMatchRowColor(h);
+            
+            // Trava as caixinhas para que o usuário não mude o que já foi salvo!
+            h.disabled = true;
+            a.disabled = true;
         }
     });
 }
@@ -366,13 +377,22 @@ function preencherPalpitesAtuais(palpitesSalvos) {
 async function salvarNoMongo() {
     showLoading(true);
     let palpitesParaSalvar = {};
+    
+    // Varre TODOS os inputs preenchidos (tanto os bloqueados de salvamentos anteriores, quanto os novos)
     document.querySelectorAll('.entry-input[class*="u-h-"]').forEach(hInput => {
-        const mId = hInput.getAttribute('data-match'); const aInput = document.querySelector(`.u-a-${mId}`);
-        if (hInput.value !== "" && aInput.value !== "") palpitesParaSalvar[mId] = { h: hInput.value, a: aInput.value };
+        const mId = hInput.getAttribute('data-match'); 
+        const aInput = document.querySelector(`.u-a-${mId}`);
+        if (hInput.value !== "" && aInput.value !== "") {
+            palpitesParaSalvar[mId] = { h: hInput.value, a: aInput.value };
+        }
     });
     
+    // Salva a lista completa, acumulando os palpites
     await fetch(`${API_URL}/salvar`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: currentUser.name, jogos: palpitesParaSalvar }) });
     showToast("Palpites Salvos com Sucesso!");
+    
+    // Recarrega os dados (isso vai rodar o bloqueio visual nos palpites recém-salvos)
+    await carregarDadosDaNuvem();
     showLoading(false);
 }
 
@@ -484,6 +504,7 @@ setInterval(() => {
             timer.classList.add('late');
             timer.innerHTML = `<i class="ph-fill ph-lock-key"></i> Fechado`;
             
+            // Se o tempo acabou, os campos travam independentemente de terem sido salvos ou não
             if (currentUser && currentUser.name !== "Admin") {
                 const hInput = document.querySelector(`.u-h-${mId}`);
                 const aInput = document.querySelector(`.u-a-${mId}`);
