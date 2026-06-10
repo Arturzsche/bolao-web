@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bolão 2026 | Ficha e Tabela</title>
+    <title>Bolão Manutenção</title>
     <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/lipis/flag-icons@7.2.2/css/flag-icons.min.css"/>
@@ -15,7 +15,7 @@
 <div id="login-screen" class="login-overlay">
     
     <div class="login-card" id="login-card-default" style="display: none;">
-        <h1 class="logo-text" style="font-size: 2.5rem; text-align: center; margin-bottom: 5px;">BOLÃO<span>26</span></h1>
+        <h1 class="logo-text" style="font-size: 2.2rem; text-align: center; margin-bottom: 5px;">BOLÃO<span>MANUTENÇÃO</span></h1>
         <p style="text-align: center; color: #666; margin-bottom: 25px;">Identifique-se para lançar os seus palpites</p>
         
         <label>Nome:</label>
@@ -29,7 +29,7 @@
     </div>
 
     <div class="login-card" id="login-card-return" style="display: none; text-align: center;">
-        <h1 class="logo-text" style="font-size: 2.5rem; margin-bottom: 5px;">BOLÃO<span>26</span></h1>
+        <h1 class="logo-text" style="font-size: 2.2rem; margin-bottom: 5px;">BOLÃO<span>MANUTENÇÃO</span></h1>
         <i class="ph-bold ph-user-circle" style="font-size: 4.5rem; color: var(--br-blue); margin-top: 10px;"></i>
         <p style="color: #666; margin: 15px 0 5px 0; font-size: 1.1rem;">Bem-vindo de volta,</p>
         <h2 id="return-user-name" style="color: var(--text-dark); margin-bottom: 25px;">Usuário</h2>
@@ -43,7 +43,7 @@
 
 <div id="main-app" style="display: none;">
     <header class="ge-header">
-        <div class="logo-text">BOLÃO<span>26</span></div>
+        <div class="logo-text" style="font-size: 1.2rem;">BOLÃO<span>MANUTENÇÃO</span></div>
         <div style="font-weight: 600; font-size: 0.85rem; display: flex; align-items: center; gap: 10px;">
             <i class="ph-bold ph-user-circle" style="font-size: 1.5rem; color: var(--br-yellow);"></i>
             <span id="display-user-name" style="color: white;">Usuário</span>
@@ -60,7 +60,7 @@
     <div class="app-content">
         <section id="view-palpites" class="view active">
             <div id="mobile-slip-container"></div>
-            <button id="btn-save-palpites" class="btn-float-save" onclick="salvarNoMongo()"><i class="ph-fill ph-cloud-arrow-up"></i> Salvar Definitivamente</button>
+            <button id="btn-save-palpites" class="btn-float-save" onclick="salvarNoMongo()">Salvar palpite</button>
         </section>
 
         <section id="view-ranking" class="view">
