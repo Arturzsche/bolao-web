@@ -4,7 +4,7 @@ let currentUser = null;
 let adminResults = {};
 let allUsersData = [];
 
-// OS 72 JOGOS REAIS COM OS HORÁRIOS CORRIGIDOS
+// OS 72 JOGOS REAIS
 const ALL_GAMES = [
     ["11 DE JUNHO (QUI)", [
         { id: 'g01', time: '16:00', grp: "A", t1: "México", f1: "mx", t2: "África do Sul", f2: "za" },
@@ -319,9 +319,6 @@ function updateMatchRowColor(inputElement) {
     }
 }
 
-// ----------------------------------------------------
-// NÚCLEO BLINDADO 100% CONTRA CACHE DE NAVEGADOR
-// ----------------------------------------------------
 async function carregarDadosDaNuvem() {
     showLoading(true);
     const timestamp = Date.now(); 
@@ -362,7 +359,6 @@ function preencherPalpitesAtuais(palpitesSalvos) {
             a.value = palpitesSalvos[mId].a; 
             updateMatchRowColor(h);
             
-            // Trava as caixinhas para não permitir mais alterações após atualizar a página!
             h.disabled = true;
             a.disabled = true;
         }
@@ -370,14 +366,41 @@ function preencherPalpitesAtuais(palpitesSalvos) {
 }
 
 // ----------------------------------------------------
-// A CORREÇÃO PRINCIPAL COM ALL_GAMES.forEach
+// LÓGICA DO MODAL DE CONFIRMAÇÃO
 // ----------------------------------------------------
-async function salvarNoMongo() {
+function salvarNoMongo() {
+    let temPalpiteNovo = false; 
+    
+    ALL_GAMES.forEach(day => {
+        day[1].forEach(game => {
+            const hInput = document.querySelector(`.u-h-${game.id}`);
+            const aInput = document.querySelector(`.u-a-${game.id}`);
+            
+            // Verifica se o input está preenchido E se NÃO está bloqueado (disabled)
+            if (hInput && aInput && hInput.value !== "" && aInput.value !== "" && !hInput.disabled) {
+                temPalpiteNovo = true;
+            }
+        });
+    });
+
+    if (!temPalpiteNovo) {
+        showToast("Nenhum palpite novo para salvar!");
+        return;
+    }
+    
+    // Mostra o Modal de Confirmação em vez de salvar direto
+    document.getElementById('confirm-modal').style.display = 'flex';
+}
+
+function fecharModal() {
+    document.getElementById('confirm-modal').style.display = 'none';
+}
+
+async function executarSalvamento() {
+    fecharModal(); // Esconde a caixinha
     showLoading(true);
     let palpitesParaSalvar = {};
-    let enviouAlgo = false; 
     
-    // O sistema usa a lista oficial para não perder dados, em vez de depender do CSS do navegador
     ALL_GAMES.forEach(day => {
         day[1].forEach(game => {
             const hInput = document.querySelector(`.u-h-${game.id}`);
@@ -385,17 +408,9 @@ async function salvarNoMongo() {
             
             if (hInput && aInput && hInput.value !== "" && aInput.value !== "") {
                 palpitesParaSalvar[game.id] = { h: hInput.value, a: aInput.value };
-                enviouAlgo = true;
             }
         });
     });
-
-    // Se o utilizador clicar em salvar sem preencher nada, aborta para evitar limpar a base de dados
-    if (!enviouAlgo) {
-        showToast("Nenhum palpite para salvar!");
-        showLoading(false);
-        return;
-    }
     
     try {
         const response = await fetch(`${API_URL}/salvar`, { 
