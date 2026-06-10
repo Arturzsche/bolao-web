@@ -8,7 +8,7 @@
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/lipis/flag-icons@7.2.2/css/flag-icons.min.css"/>
     
-    <link rel="stylesheet" href="style.css?v=3.1">
+    <link rel="stylesheet" href="style.css?v=3.2">
 </head>
 <body>
 
@@ -90,11 +90,23 @@
     </div>
 </div>
 
+<div id="confirm-modal" class="confirm-overlay" style="display: none;">
+    <div class="confirm-card">
+        <i class="ph-fill ph-warning-circle confirm-icon"></i>
+        <h2>Confirmar Palpite?</h2>
+        <p>Ao salvar, os jogos preenchidos serão <strong>travados</strong> e não poderão mais ser alterados. Deseja continuar?</p>
+        <div class="confirm-actions">
+            <button class="btn-cancel" onclick="fecharModal()">Cancelar</button>
+            <button class="btn-confirm" onclick="executarSalvamento()">Sim, salvar!</button>
+        </div>
+    </div>
+</div>
+
 <div id="toast-notif" class="toast-notif"></div>
 <div id="loading-spinner" class="loading-overlay" style="display: none;">
     <div class="spinner"></div>
 </div>
 
-<script src="script.js?v=3.1"></script>
+<script src="script.js?v=3.2"></script>
 </body>
 </html>
