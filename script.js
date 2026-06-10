@@ -4,7 +4,7 @@ let currentUser = null;
 let adminResults = {};
 let allUsersData = [];
 
-// OS 72 JOGOS REAIS COM OS HORÁRIOS
+// OS 72 JOGOS REAIS COM OS HORÁRIOS CORRIGIDOS
 const ALL_GAMES = [
     ["11 DE JUNHO (QUI)", [
         { id: 'g01', time: '16:00', grp: "A", t1: "México", f1: "mx", t2: "África do Sul", f2: "za" },
@@ -249,9 +249,9 @@ function getMatchState(dayStr, timeStr) {
     openTime.setHours(0, 0, 0, 0); 
     
     const now = Date.now();
-    if (now < openTime.getTime()) return 'early'; // Dia ainda não chegou
-    if (now >= kickoffMs) return 'late';  // Jogo já começou
-    return 'open'; // O dia do jogo chegou e a bola ainda não rolou
+    if (now < openTime.getTime()) return 'early'; 
+    if (now >= kickoffMs) return 'late';  
+    return 'open'; 
 }
 
 function renderGames(containerId, mode) {
@@ -319,23 +319,22 @@ function updateMatchRowColor(inputElement) {
 }
 
 // ----------------------------------------------------
-// NÚCLEO BLINDADO: REQUISIÇÕES PROTEGIDAS CONTRA ERROS
+// NÚCLEO BLINDADO COM QUEBRADOR DE CACHE (?t=)
 // ----------------------------------------------------
 async function carregarDadosDaNuvem() {
     showLoading(true);
+    const timestamp = Date.now(); // Força o link a ser único a cada execução
     
-    // 1. Busca Palpites do Usuário (Protegido contra espaços no nome)
     if (currentUser.name !== "Admin") {
         try {
-            const urlSegura = `${API_URL}/palpites/${encodeURIComponent(currentUser.name)}`;
+            const urlSegura = `${API_URL}/palpites/${encodeURIComponent(currentUser.name)}?t=${timestamp}`;
             const meusPalpites = await fetch(urlSegura).then(r => r.json());
             if (meusPalpites && !meusPalpites.error) preencherPalpitesAtuais(meusPalpites);
         } catch(e) { console.error("Erro ao puxar palpites pessoais"); }
     }
 
-    // 2. Busca Gabarito do Admin
     try {
-        adminResults = await fetch(`${API_URL}/palpites/Admin`).then(r => r.json());
+        adminResults = await fetch(`${API_URL}/palpites/Admin?t=${timestamp}`).then(r => r.json());
         if (currentUser.name === "Admin" && adminResults && !adminResults.error) {
             Object.keys(adminResults).forEach(mId => {
                 const h = document.querySelector(`.a-h-${mId}`); const a = document.querySelector(`.a-a-${mId}`);
@@ -344,13 +343,11 @@ async function carregarDadosDaNuvem() {
         }
     } catch(e) { console.error("Erro ao puxar gabarito"); }
 
-    // 3. Busca Todos os Usuários
     try {
-        const usersResp = await fetch(`${API_URL}/users`).then(r => r.json());
+        const usersResp = await fetch(`${API_URL}/users?t=${timestamp}`).then(r => r.json());
         if(Array.isArray(usersResp)) allUsersData = usersResp;
     } catch(e) { console.error("Erro ao puxar tabela de usuários"); }
 
-    // 4. Força o desenho da tabela, garantindo que não fique em branco
     calculateAndRenderRanking();
     showLoading(false);
 }
@@ -396,7 +393,6 @@ function calculateAndRenderRanking() {
     const tbody = document.getElementById('ranking-body-app');
     if (!tbody) return;
 
-    // Proteção: Se a lista for vazia, invalida, nula, ou só tiver o Admin, exibe mensagem vazia!
     if (!Array.isArray(allUsersData) || allUsersData.length === 0 || (allUsersData.length === 1 && allUsersData[0].name === "Admin")) {
         tbody.innerHTML = `<tr><td colspan="4" style="padding: 20px; color: #999;">Nenhum participante registrado ainda.</td></tr>`;
         return;
@@ -455,10 +451,11 @@ function showToast(msg) {
 
 async function carregarRankingSilencioso() {
     try {
-        const usersResp = await fetch(`${API_URL}/users`).then(r => r.json());
+        const timestamp = Date.now();
+        const usersResp = await fetch(`${API_URL}/users?t=${timestamp}`).then(r => r.json());
         if(Array.isArray(usersResp)) allUsersData = usersResp;
         
-        const adminResp = await fetch(`${API_URL}/palpites/Admin`).then(r => r.json());
+        const adminResp = await fetch(`${API_URL}/palpites/Admin?t=${timestamp}`).then(r => r.json());
         if(adminResp && !adminResp.error) adminResults = adminResp;
         
         calculateAndRenderRanking();
