@@ -235,7 +235,7 @@ function parseKickoff(dayStr, timeStr) {
     if(!match) return Date.now();
     
     const day = parseInt(match[1]);
-    const month = match[2].toUpperCase() === "JULHO" ? 6 : 5; // Jun=5, Jul=6
+    const month = match[2].toUpperCase() === "JULHO" ? 6 : 5; 
     const [hours, minutes] = timeStr.split(':').map(Number);
     
     return new Date(2026, month, day, hours, minutes, 0).getTime();
@@ -325,7 +325,7 @@ function updateMatchRowColor(inputElement) {
 async function carregarDadosDaNuvem() {
     showLoading(true);
     const timestamp = Date.now(); 
-    const fetchOpts = { cache: 'no-store' }; // Força a não usar cache em nenhuma hipótese
+    const fetchOpts = { cache: 'no-store' }; 
     
     if (currentUser.name !== "Admin") {
         try {
@@ -362,18 +362,22 @@ function preencherPalpitesAtuais(palpitesSalvos) {
             a.value = palpitesSalvos[mId].a; 
             updateMatchRowColor(h);
             
-            // Trava as caixinhas para não permitir mais alterações!
+            // Trava as caixinhas para não permitir mais alterações após atualizar a página!
             h.disabled = true;
             a.disabled = true;
         }
     });
 }
 
+// ----------------------------------------------------
+// A CORREÇÃO PRINCIPAL COM ALL_GAMES.forEach
+// ----------------------------------------------------
 async function salvarNoMongo() {
     showLoading(true);
     let palpitesParaSalvar = {};
     let enviouAlgo = false; 
     
+    // O sistema usa a lista oficial para não perder dados, em vez de depender do CSS do navegador
     ALL_GAMES.forEach(day => {
         day[1].forEach(game => {
             const hInput = document.querySelector(`.u-h-${game.id}`);
@@ -386,6 +390,7 @@ async function salvarNoMongo() {
         });
     });
 
+    // Se o utilizador clicar em salvar sem preencher nada, aborta para evitar limpar a base de dados
     if (!enviouAlgo) {
         showToast("Nenhum palpite para salvar!");
         showLoading(false);
