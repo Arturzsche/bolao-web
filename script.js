@@ -4,7 +4,7 @@ let currentUser = null;
 let adminResults = {};
 let allUsersData = [];
 
-// OS 72 JOGOS REAIS
+// OS 72 JOGOS REAIS COM OS HORÁRIOS CORRIGIDOS
 const ALL_GAMES = [
     ["11 DE JUNHO (QUI)", [
         { id: 'g01', time: '16:00', grp: "A", t1: "México", f1: "mx", t2: "África do Sul", f2: "za" },
@@ -228,10 +228,6 @@ async function iniciarApp() {
     await carregarDadosDaNuvem();
 }
 
-// ----------------------------------------------------
-// MOTOR DE TEMPO E CRONÔMETRO (ATUALIZADO)
-// ----------------------------------------------------
-
 function parseKickoff(dayStr, timeStr) {
     const match = dayStr.match(/(\d+)\s+DE\s+([A-Z]+)/i);
     if(!match) return Date.now();
@@ -246,11 +242,11 @@ function parseKickoff(dayStr, timeStr) {
 function getMatchState(kickoffMs) {
     const now = Date.now();
     const openTime = new Date(kickoffMs);
-    openTime.setHours(0, 0, 0, 0); // 00h do dia do jogo
+    openTime.setHours(0, 0, 0, 0); 
     
-    if (now >= kickoffMs) return 'late'; // Já começou (Fechado)
-    if (now >= openTime.getTime()) return 'countdown'; // É o dia do jogo (Mostra cronômetro)
-    return 'future'; // Falta mais de um dia (Aberto, mas sem cronômetro)
+    if (now >= kickoffMs) return 'late'; 
+    if (now >= openTime.getTime()) return 'countdown'; 
+    return 'future'; 
 }
 
 function renderGames(containerId, mode) {
@@ -275,7 +271,6 @@ function renderGames(containerId, mode) {
                 } else if (state === 'countdown') {
                     lockIcon = `<span class="lock-status open countdown-timer" data-match="${game.id}" data-kickoff="${kickoffMs}"><i class="ph-bold ph-clock"></i> ...</span>`;
                 } else {
-                    // Jogos no futuro agora ficam Abertos imediatamente
                     lockIcon = `<span class="lock-status open"><i class="ph-fill ph-check-circle"></i> Aberto</span>`;
                 }
             }
@@ -322,9 +317,6 @@ function updateMatchRowColor(inputElement) {
     }
 }
 
-// ----------------------------------------------------
-// NÚCLEO BLINDADO COM QUEBRADOR DE CACHE (?t=)
-// ----------------------------------------------------
 async function carregarDadosDaNuvem() {
     showLoading(true);
     const timestamp = Date.now(); 
@@ -356,9 +348,6 @@ async function carregarDadosDaNuvem() {
     showLoading(false);
 }
 
-// ----------------------------------------------------
-// LÓGICA DE BLOQUEIO DOS PALPITES JÁ SALVOS
-// ----------------------------------------------------
 function preencherPalpitesAtuais(palpitesSalvos) {
     Object.keys(palpitesSalvos).forEach(mId => {
         const h = document.querySelector(`.u-h-${mId}`); const a = document.querySelector(`.u-a-${mId}`);
@@ -367,31 +356,65 @@ function preencherPalpitesAtuais(palpitesSalvos) {
             a.value = palpitesSalvos[mId].a; 
             updateMatchRowColor(h);
             
-            // Trava as caixinhas para que o usuário não mude o que já foi salvo!
+            // Trava as caixinhas para não permitir mais alterações!
             h.disabled = true;
             a.disabled = true;
         }
     });
 }
 
+// ----------------------------------------------------
+// A CORREÇÃO PRINCIPAL E BLINDAGEM DO BOTÃO SALVAR
+// ----------------------------------------------------
 async function salvarNoMongo() {
     showLoading(true);
     let palpitesParaSalvar = {};
+    let enviouAlgo = false; // Trava de Segurança
     
-    // Varre TODOS os inputs preenchidos (tanto os bloqueados de salvamentos anteriores, quanto os novos)
-    document.querySelectorAll('.entry-input[class*="u-h-"]').forEach(hInput => {
-        const mId = hInput.getAttribute('data-match'); 
-        const aInput = document.querySelector(`.u-a-${mId}`);
-        if (hInput.value !== "" && aInput.value !== "") {
-            palpitesParaSalvar[mId] = { h: hInput.value, a: aInput.value };
-        }
+    // Agora o sistema usa a lista oficial para não perder dados, em vez de depender do CSS
+    ALL_GAMES.forEach(day => {
+        day[1].forEach(game => {
+            const hInput = document.querySelector(`.u-h-${game.id}`);
+            const aInput = document.querySelector(`.u-a-${game.id}`);
+            
+            if (hInput && aInput && hInput.value !== "" && aInput.value !== "") {
+                palpitesParaSalvar[game.id] = { h: hInput.value, a: aInput.value };
+                enviouAlgo = true;
+            }
+        });
     });
+
+    // Se o usuário clicar em salvar sem preencher nada, aborta! Evita limpar o banco de dados.
+    if (!enviouAlgo) {
+        showToast("Nenhum palpite para salvar!");
+        showLoading(false);
+        return;
+    }
     
-    // Salva a lista completa, acumulando os palpites
-    await fetch(`${API_URL}/salvar`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: currentUser.name, jogos: palpitesParaSalvar }) });
-    showToast("Palpites Salvos com Sucesso!");
+    try {
+        const response = await fetch(`${API_URL}/salvar`, { 
+            method: 'POST', 
+            headers: { 'Content-Type': 'application/json' }, 
+            body: JSON.stringify({ name: currentUser.name, jogos: palpitesParaSalvar }) 
+        });
+        
+        const data = await response.json();
+        
+        if(data.success) {
+            showToast("Palpites Salvos com Sucesso!");
+            
+            // Bloqueia as caixinhas que foram salvas instantaneamente na tela!
+            Object.keys(palpitesParaSalvar).forEach(mId => {
+                const h = document.querySelector(`.u-h-${mId}`); 
+                const a = document.querySelector(`.u-a-${mId}`);
+                if(h) h.disabled = true;
+                if(a) a.disabled = true;
+            });
+        }
+    } catch (err) {
+        alert("Falha de conexão. Tente novamente.");
+    }
     
-    // Recarrega os dados (isso vai rodar o bloqueio visual nos palpites recém-salvos)
     await carregarDadosDaNuvem();
     showLoading(false);
 }
@@ -399,12 +422,36 @@ async function salvarNoMongo() {
 async function saveAdminResults() {
     showLoading(true);
     let gabarito = {};
-    document.querySelectorAll('.entry-input[class*="a-h-"]').forEach(hInput => {
-        const mId = hInput.getAttribute('data-match'); const aInput = document.querySelector(`.a-a-${mId}`);
-        if (hInput.value !== "" && aInput.value !== "") gabarito[mId] = { h: hInput.value, a: aInput.value };
+    let enviouAlgo = false;
+    
+    ALL_GAMES.forEach(day => {
+        day[1].forEach(game => {
+            const hInput = document.querySelector(`.a-h-${game.id}`);
+            const aInput = document.querySelector(`.a-a-${game.id}`);
+            if (hInput && aInput && hInput.value !== "" && aInput.value !== "") {
+                gabarito[game.id] = { h: hInput.value, a: aInput.value };
+                enviouAlgo = true;
+            }
+        });
     });
-    await fetch(`${API_URL}/salvar`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: "Admin", jogos: gabarito }) });
-    showToast("Gabarito Publicado!");
+
+    if (!enviouAlgo) {
+        showToast("Nenhum placar para publicar!");
+        showLoading(false);
+        return;
+    }
+
+    try {
+        await fetch(`${API_URL}/salvar`, { 
+            method: 'POST', 
+            headers: { 'Content-Type': 'application/json' }, 
+            body: JSON.stringify({ name: "Admin", jogos: gabarito }) 
+        });
+        showToast("Gabarito Publicado!");
+    } catch (err) {
+        alert("Erro ao publicar o gabarito.");
+    }
+    
     await carregarDadosDaNuvem();
     showLoading(false);
 }
@@ -487,9 +534,6 @@ setInterval(() => {
     if (viewRanking && viewRanking.classList.contains('active')) carregarRankingSilencioso();
 }, 10000);
 
-// ==========================================
-// LOOP DO CRONÔMETRO (RODA A CADA 1 SEGUNDO)
-// ==========================================
 setInterval(() => {
     const timers = document.querySelectorAll('.countdown-timer');
     const now = Date.now();
@@ -504,7 +548,6 @@ setInterval(() => {
             timer.classList.add('late');
             timer.innerHTML = `<i class="ph-fill ph-lock-key"></i> Fechado`;
             
-            // Se o tempo acabou, os campos travam independentemente de terem sido salvos ou não
             if (currentUser && currentUser.name !== "Admin") {
                 const hInput = document.querySelector(`.u-h-${mId}`);
                 const aInput = document.querySelector(`.u-a-${mId}`);
