@@ -149,7 +149,8 @@ async function loginAsLastUser() {
         showLoading(true);
         try {
             const resp = await fetch(`${API_URL}/login`, {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                method: 'POST', 
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ name: lastUser.name })
             }).then(r => r.json());
 
@@ -176,7 +177,8 @@ async function realizarLogin() {
     showLoading(true);
     try {
         const resp = await fetch(`${API_URL}/login`, {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            method: 'POST', 
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ name: fullName })
         }).then(r => r.json());
 
@@ -317,20 +319,24 @@ function updateMatchRowColor(inputElement) {
     }
 }
 
+// ----------------------------------------------------
+// NÚCLEO BLINDADO 100% CONTRA CACHE DE NAVEGADOR
+// ----------------------------------------------------
 async function carregarDadosDaNuvem() {
     showLoading(true);
     const timestamp = Date.now(); 
+    const fetchOpts = { cache: 'no-store' }; // Força a não usar cache em nenhuma hipótese
     
     if (currentUser.name !== "Admin") {
         try {
             const urlSegura = `${API_URL}/palpites/${encodeURIComponent(currentUser.name)}?t=${timestamp}`;
-            const meusPalpites = await fetch(urlSegura).then(r => r.json());
+            const meusPalpites = await fetch(urlSegura, fetchOpts).then(r => r.json());
             if (meusPalpites && !meusPalpites.error) preencherPalpitesAtuais(meusPalpites);
         } catch(e) { console.error("Erro ao puxar palpites pessoais"); }
     }
 
     try {
-        adminResults = await fetch(`${API_URL}/palpites/Admin?t=${timestamp}`).then(r => r.json());
+        adminResults = await fetch(`${API_URL}/palpites/Admin?t=${timestamp}`, fetchOpts).then(r => r.json());
         if (currentUser.name === "Admin" && adminResults && !adminResults.error) {
             Object.keys(adminResults).forEach(mId => {
                 const h = document.querySelector(`.a-h-${mId}`); const a = document.querySelector(`.a-a-${mId}`);
@@ -340,7 +346,7 @@ async function carregarDadosDaNuvem() {
     } catch(e) { console.error("Erro ao puxar gabarito"); }
 
     try {
-        const usersResp = await fetch(`${API_URL}/users?t=${timestamp}`).then(r => r.json());
+        const usersResp = await fetch(`${API_URL}/users?t=${timestamp}`, fetchOpts).then(r => r.json());
         if(Array.isArray(usersResp)) allUsersData = usersResp;
     } catch(e) { console.error("Erro ao puxar tabela de usuários"); }
 
@@ -363,15 +369,11 @@ function preencherPalpitesAtuais(palpitesSalvos) {
     });
 }
 
-// ----------------------------------------------------
-// A CORREÇÃO PRINCIPAL E BLINDAGEM DO BOTÃO SALVAR
-// ----------------------------------------------------
 async function salvarNoMongo() {
     showLoading(true);
     let palpitesParaSalvar = {};
-    let enviouAlgo = false; // Trava de Segurança
+    let enviouAlgo = false; 
     
-    // Agora o sistema usa a lista oficial para não perder dados, em vez de depender do CSS
     ALL_GAMES.forEach(day => {
         day[1].forEach(game => {
             const hInput = document.querySelector(`.u-h-${game.id}`);
@@ -384,7 +386,6 @@ async function salvarNoMongo() {
         });
     });
 
-    // Se o usuário clicar em salvar sem preencher nada, aborta! Evita limpar o banco de dados.
     if (!enviouAlgo) {
         showToast("Nenhum palpite para salvar!");
         showLoading(false);
@@ -403,7 +404,6 @@ async function salvarNoMongo() {
         if(data.success) {
             showToast("Palpites Salvos com Sucesso!");
             
-            // Bloqueia as caixinhas que foram salvas instantaneamente na tela!
             Object.keys(palpitesParaSalvar).forEach(mId => {
                 const h = document.querySelector(`.u-h-${mId}`); 
                 const a = document.querySelector(`.u-a-${mId}`);
@@ -519,10 +519,12 @@ function showToast(msg) {
 async function carregarRankingSilencioso() {
     try {
         const timestamp = Date.now();
-        const usersResp = await fetch(`${API_URL}/users?t=${timestamp}`).then(r => r.json());
+        const fetchOpts = { cache: 'no-store' };
+        
+        const usersResp = await fetch(`${API_URL}/users?t=${timestamp}`, fetchOpts).then(r => r.json());
         if(Array.isArray(usersResp)) allUsersData = usersResp;
         
-        const adminResp = await fetch(`${API_URL}/palpites/Admin?t=${timestamp}`).then(r => r.json());
+        const adminResp = await fetch(`${API_URL}/palpites/Admin?t=${timestamp}`, fetchOpts).then(r => r.json());
         if(adminResp && !adminResp.error) adminResults = adminResp;
         
         calculateAndRenderRanking();
