@@ -4,7 +4,7 @@ let currentUser = null;
 let adminResults = {};
 let allUsersData = [];
 
-// OS 72 JOGOS REAIS COM OS HORÁRIOS CORRIGIDOS
+// OS 72 JOGOS REAIS COM HORÁRIOS CORRETOS
 const ALL_GAMES = [
     ["11 DE JUNHO (QUI)", [
         { id: 'g01', time: '16:00', grp: "A", t1: "México", f1: "mx", t2: "África do Sul", f2: "za" },
@@ -154,9 +154,7 @@ async function loginAsLastUser() {
             }).then(r => r.json());
 
             if (resp.success) entrar(lastUser.name);
-        } catch (e) {
-            alert("Erro de conexão.");
-        }
+        } catch (e) { alert("Erro de conexão."); }
         showLoading(false);
     }
 }
@@ -202,9 +200,7 @@ function entrar(fullName) {
 }
 
 function fazerLogout() { 
-    if(currentUser) {
-        localStorage.setItem('bolao_last_user', JSON.stringify(currentUser));
-    }
+    if(currentUser) localStorage.setItem('bolao_last_user', JSON.stringify(currentUser));
     localStorage.removeItem('bolao_session'); 
     location.reload(); 
 }
@@ -224,7 +220,6 @@ async function iniciarApp() {
         switchTab('admin');
     } else {
         renderGames('mobile-slip-container', 'user');
-        
         let savedTab = localStorage.getItem('bolao_active_tab') || 'palpites';
         if (savedTab === 'admin') savedTab = 'palpites'; 
         switchTab(savedTab);
@@ -233,30 +228,66 @@ async function iniciarApp() {
     await carregarDadosDaNuvem();
 }
 
+// LÓGICA DE TEMPO: Analisa se o jogo está Aberto, Fechado (Futuro) ou Encerrado (Passado)
+function getMatchState(dayStr, timeStr) {
+    const match = dayStr.match(/(\d+)\s+DE\s+([A-Z]+)/i);
+    if(!match) return 'open';
+    
+    const day = parseInt(match[1]);
+    const monthStr = match[2].toUpperCase();
+    let month = 5; // Junho é o mês 5 no JS (0-indexado)
+    if(monthStr === "JULHO") month = 6;
+    
+    const [hours, minutes] = timeStr.split(':').map(Number);
+    const kickoff = new Date(2026, month, day, hours, minutes, 0);
+    
+    const openTime = new Date(kickoff);
+    openTime.setHours(0, 0, 0, 0); // Define a abertura para as 00:00 daquele dia
+    
+    const now = new Date();
+    if (now < openTime) return 'early'; // Ainda não é o dia do jogo
+    if (now >= kickoff) return 'late';  // O jogo já começou
+    return 'open'; // O dia do jogo chegou e a bola ainda não rolou
+}
+
 function renderGames(containerId, mode) {
     const container = document.getElementById(containerId);
     if(!container) return;
     let html = '';
+    
     ALL_GAMES.forEach(day => {
         html += `<div class="day-container"><div class="day-title-bar">${day[0]}</div>`;
+        
         day[1].forEach(game => {
             const prefix = mode === 'user' ? 'u' : 'a';
-            const onInput = mode === 'user' ? 'oninput="updateWinnerBadge(this)"' : '';
+            const state = getMatchState(day[0], game.time);
+            
+            // O Admin ignora bloqueios de tempo para poder preencher o gabarito de jogos passados
+            const isDisabled = (mode === 'user' && state !== 'open') ? 'disabled' : '';
+            
+            let lockIcon = '';
+            if (mode === 'user') {
+                if (state === 'early') lockIcon = `<span class="lock-status early"><i class="ph-fill ph-lock-key"></i> Abre 00h</span>`;
+                else if (state === 'late') lockIcon = `<span class="lock-status late"><i class="ph-fill ph-lock-key"></i> Fechado</span>`;
+                else lockIcon = `<span class="lock-status open"><i class="ph-fill ph-lock-key-open"></i> Aberto</span>`;
+            }
+
+            const onInput = `oninput="updateMatchRowColor(this)"`;
             
             html += `
             <div class="match-entry-row">
                 <div class="entry-group-box">
                     <span class="group-letter">${game.grp}</span>
                     <span class="match-time">${game.time}</span>
+                    ${lockIcon}
                 </div>
                 <div class="entry-team-box home">${game.t1} <span class="fi fi-${game.f1}"></span></div>
                 <div class="entry-inputs-box">
-                    <input type="number" inputmode="numeric" class="entry-input ${prefix}-h-${game.id}" data-match="${game.id}" ${onInput}>
+                    <input type="number" inputmode="numeric" class="entry-input ${prefix}-h-${game.id}" data-match="${game.id}" ${onInput} ${isDisabled}>
                     <span class="entry-vs">x</span>
-                    <input type="number" inputmode="numeric" class="entry-input ${prefix}-a-${game.id}" data-match="${game.id}" ${onInput}>
+                    <input type="number" inputmode="numeric" class="entry-input ${prefix}-a-${game.id}" data-match="${game.id}" ${onInput} ${isDisabled}>
                 </div>
                 <div class="entry-team-box away"><span class="fi fi-${game.f2}"></span> ${game.t2}</div>
-                <div class="entry-ve-box"><span class="entry-ve-badge ve-id-${game.id}">V/E:</span></div>
             </div>`;
         });
         html += `</div>`;
@@ -264,19 +295,39 @@ function renderGames(containerId, mode) {
     container.innerHTML = html;
 }
 
+// Aplica as cores de fundo (Verde ou Cinza) ao preencher o placar
+function updateMatchRowColor(inputElement) {
+    const mId = inputElement.getAttribute('data-match');
+    const hInput = document.querySelector(`.u-h-${mId}`) || document.querySelector(`.a-h-${mId}`);
+    const aInput = document.querySelector(`.u-a-${mId}`) || document.querySelector(`.a-a-${mId}`);
+    
+    if(!hInput || !aInput) return;
+    const row = hInput.closest('.match-entry-row');
+    if(!row) return;
+
+    row.classList.remove('win-match', 'draw-match');
+    
+    if(hInput.value !== "" && aInput.value !== "") {
+        const h = parseInt(hInput.value);
+        const a = parseInt(aInput.value);
+        if(h === a) row.classList.add('draw-match');
+        else row.classList.add('win-match');
+    }
+}
+
 async function carregarDadosDaNuvem() {
     showLoading(true);
     try {
         if (currentUser.name !== "Admin") {
             const meusPalpites = await fetch(`${API_URL}/palpites/${currentUser.name}`).then(r => r.json());
-            if (meusPalpites && Object.keys(meusPalpites).length > 0) preencherEBloquearPalpites(meusPalpites);
+            if (meusPalpites && Object.keys(meusPalpites).length > 0) preencherPalpitesAtuais(meusPalpites);
         }
 
         adminResults = await fetch(`${API_URL}/palpites/Admin`).then(r => r.json());
         if (currentUser.name === "Admin" && adminResults) {
             Object.keys(adminResults).forEach(mId => {
                 const h = document.querySelector(`.a-h-${mId}`); const a = document.querySelector(`.a-a-${mId}`);
-                if(h && a) { h.value = adminResults[mId].h; a.value = adminResults[mId].a; }
+                if(h && a) { h.value = adminResults[mId].h; a.value = adminResults[mId].a; updateMatchRowColor(h); }
             });
         }
         allUsersData = await fetch(`${API_URL}/users`).then(r => r.json());
@@ -285,32 +336,28 @@ async function carregarDadosDaNuvem() {
     showLoading(false);
 }
 
-function preencherEBloquearPalpites(palpitesSalvos) {
-    let preencheu = false;
+function preencherPalpitesAtuais(palpitesSalvos) {
     Object.keys(palpitesSalvos).forEach(mId => {
         const h = document.querySelector(`.u-h-${mId}`); const a = document.querySelector(`.u-a-${mId}`);
         if(h && a) { 
-            h.value = palpitesSalvos[mId].h; a.value = palpitesSalvos[mId].a; 
-            updateWinnerBadge(h); h.disabled = true; a.disabled = true; preencheu = true;
+            h.value = palpitesSalvos[mId].h; 
+            a.value = palpitesSalvos[mId].a; 
+            updateMatchRowColor(h);
         }
     });
-    if (preencheu) {
-        document.getElementById('btn-save-palpites').style.display = 'none';
-        document.getElementById('lock-warning').style.display = 'block';
-    }
 }
 
+// Salva todos os palpites que estiverem preenchidos na tela (mesmo os que já foram bloqueados pelo tempo)
 async function salvarNoMongo() {
-    if(!confirm("Atenção: Após guardar, não poderá alterar os palpites. Confirmar?")) return;
     showLoading(true);
-    let palpites = {};
+    let palpitesParaSalvar = {};
     document.querySelectorAll('.entry-input[class*="u-h-"]').forEach(hInput => {
         const mId = hInput.getAttribute('data-match'); const aInput = document.querySelector(`.u-a-${mId}`);
-        if (hInput.value !== "" && aInput.value !== "") palpites[mId] = { h: hInput.value, a: aInput.value };
+        if (hInput.value !== "" && aInput.value !== "") palpitesParaSalvar[mId] = { h: hInput.value, a: aInput.value };
     });
-    await fetch(`${API_URL}/salvar`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: currentUser.name, jogos: palpites }) });
-    showToast("Palpites Guardados!");
-    await carregarDadosDaNuvem();
+    
+    await fetch(`${API_URL}/salvar`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: currentUser.name, jogos: palpitesParaSalvar }) });
+    showToast("Palpites Salvos com Sucesso!");
     showLoading(false);
 }
 
@@ -341,7 +388,6 @@ function calculateAndRenderRanking() {
 
     allUsersData.forEach(u => {
         if (u.name === "Admin") return;
-        
         let p = { name: u.name, pts: 0, acertos: 0 };
         const palps = u.jogos || {};
         
@@ -349,15 +395,8 @@ function calculateAndRenderRanking() {
             if(palps[mId]) {
                 const ph = parseInt(palps[mId].h), pa = parseInt(palps[mId].a);
                 const rh = parseInt(safeAdminResults[mId].h), ra = parseInt(safeAdminResults[mId].a);
-                
-                if(ph === rh && pa === ra) { 
-                    p.pts += 8; 
-                    p.acertos++; 
-                }
-                else if((ph>pa && rh>ra) || (ph<pa && rh<ra) || (ph===pa && rh===ra)) { 
-                    p.pts += 3; 
-                    p.acertos++; 
-                }
+                if(ph === rh && pa === ra) { p.pts += 8; p.acertos++; }
+                else if((ph>pa && rh>ra) || (ph<pa && rh<ra) || (ph===pa && rh===ra)) { p.pts += 3; p.acertos++; }
             }
         });
         ranking.push(p);
@@ -375,33 +414,16 @@ function calculateAndRenderRanking() {
     }).join('');
 }
 
-function updateWinnerBadge(input) {
-    const mId = input.getAttribute('data-match');
-    const h = parseInt(document.querySelector(`.u-h-${mId}`).value), a = parseInt(document.querySelector(`.u-a-${mId}`).value);
-    const badge = document.querySelector(`#mobile-slip-container .ve-id-${mId}`);
-    if(!badge) return;
-    badge.className = `entry-ve-badge ve-id-${mId}`; 
-    if(isNaN(h) || isNaN(a)) { badge.innerText = "V/E:"; return; }
-    if(h > a) { badge.classList.add('win-a'); badge.innerText = "Venc: A"; }
-    else if (a > h) { badge.classList.add('win-b'); badge.innerText = "Venc: B"; }
-    else { badge.classList.add('draw'); badge.innerText = "Empate"; }
-}
-
 function switchTab(tab) {
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    
     const targetView = document.getElementById('view-' + tab);
     if(targetView) targetView.classList.add('active');
-    
     const activeBtn = document.querySelector(`.tab-btn[onclick*="${tab}"]`);
     if(activeBtn) activeBtn.classList.add('active');
     
     localStorage.setItem('bolao_active_tab', tab);
-    
-    if (tab === 'ranking') {
-        carregarRankingSilencioso();
-    }
+    if (tab === 'ranking') carregarRankingSilencioso();
 }
 
 function showLoading(show) { document.getElementById('loading-spinner').style.display = show ? 'flex' : 'none'; }
@@ -415,14 +437,10 @@ async function carregarRankingSilencioso() {
         allUsersData = await fetch(`${API_URL}/users`).then(r => r.json());
         adminResults = await fetch(`${API_URL}/palpites/Admin`).then(r => r.json());
         calculateAndRenderRanking();
-    } catch(e) {
-        console.log("Aguardando conexão com o servidor...");
-    }
+    } catch(e) { console.log("Aguardando..."); }
 }
 
 setInterval(() => {
     const viewRanking = document.getElementById('view-ranking');
-    if (viewRanking && viewRanking.classList.contains('active')) {
-        carregarRankingSilencioso();
-    }
-}, 10000);  
+    if (viewRanking && viewRanking.classList.contains('active')) carregarRankingSilencioso();
+}, 10000);
