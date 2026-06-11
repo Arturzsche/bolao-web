@@ -234,9 +234,15 @@ function parseKickoff(dayStr, timeStr) {
     const match = dayStr.match(/(\d+)\s+DE\s+([A-Z]+)/i);
     if(!match) return Date.now();
     
-    const day = parseInt(match[1]);
+    let day = parseInt(match[1]);
     const month = match[2].toUpperCase() === "JULHO" ? 6 : 5; 
     const [hours, minutes] = timeStr.split(':').map(Number);
+    
+    // CORREÇÃO CRÍTICA DO "FUSO HORÁRIO":
+    // Jogos marcados como 00:00 ou 01:00 tecnicamente ocorrem no dia SEGUINTE.
+    if (hours === 0 || hours === 1) {
+        day += 1;
+    }
     
     return new Date(2026, month, day, hours, minutes, 0).getTime();
 }
@@ -279,6 +285,7 @@ function renderGames(containerId, mode) {
 
             const onInput = `oninput="updateMatchRowColor(this)"`;
             
+            // CORREÇÃO DOS NÚMEROS NEGATIVOS: Adicionado min="0" max="99" aos inputs
             html += `
             <div class="match-entry-row">
                 <div class="entry-group-box">
@@ -288,9 +295,9 @@ function renderGames(containerId, mode) {
                 </div>
                 <div class="entry-team-box home">${game.t1} <span class="fi fi-${game.f1}"></span></div>
                 <div class="entry-inputs-box">
-                    <input type="number" inputmode="numeric" class="entry-input ${prefix}-h-${game.id}" data-match="${game.id}" ${onInput} ${isDisabled}>
+                    <input type="number" min="0" max="99" inputmode="numeric" class="entry-input ${prefix}-h-${game.id}" data-match="${game.id}" ${onInput} ${isDisabled}>
                     <span class="entry-vs">x</span>
-                    <input type="number" inputmode="numeric" class="entry-input ${prefix}-a-${game.id}" data-match="${game.id}" ${onInput} ${isDisabled}>
+                    <input type="number" min="0" max="99" inputmode="numeric" class="entry-input ${prefix}-a-${game.id}" data-match="${game.id}" ${onInput} ${isDisabled}>
                 </div>
                 <div class="entry-team-box away"><span class="fi fi-${game.f2}"></span> ${game.t2}</div>
             </div>`;
@@ -365,9 +372,6 @@ function preencherPalpitesAtuais(palpitesSalvos) {
     });
 }
 
-// ----------------------------------------------------
-// LÓGICA DO MODAL DE CONFIRMAÇÃO
-// ----------------------------------------------------
 function salvarNoMongo() {
     let temPalpiteNovo = false; 
     
@@ -376,19 +380,24 @@ function salvarNoMongo() {
             const hInput = document.querySelector(`.u-h-${game.id}`);
             const aInput = document.querySelector(`.u-a-${game.id}`);
             
-            // Verifica se o input está preenchido E se NÃO está bloqueado (disabled)
             if (hInput && aInput && hInput.value !== "" && aInput.value !== "" && !hInput.disabled) {
-                temPalpiteNovo = true;
+                const hVal = parseInt(hInput.value);
+                const aVal = parseInt(aInput.value);
+                const kickoffMs = parseKickoff(day[0], game.time);
+                
+                // Validação Front-end forte antes mesmo de abrir o modal
+                if (hVal >= 0 && aVal >= 0 && Date.now() < kickoffMs) {
+                    temPalpiteNovo = true;
+                }
             }
         });
     });
 
     if (!temPalpiteNovo) {
-        showToast("Nenhum palpite novo para salvar!");
+        showToast("Nenhum palpite novo válido para salvar!");
         return;
     }
     
-    // Mostra o Modal de Confirmação em vez de salvar direto
     document.getElementById('confirm-modal').style.display = 'flex';
 }
 
@@ -397,7 +406,7 @@ function fecharModal() {
 }
 
 async function executarSalvamento() {
-    fecharModal(); // Esconde a caixinha
+    fecharModal(); 
     showLoading(true);
     let palpitesParaSalvar = {};
     
@@ -407,7 +416,21 @@ async function executarSalvamento() {
             const aInput = document.querySelector(`.u-a-${game.id}`);
             
             if (hInput && aInput && hInput.value !== "" && aInput.value !== "") {
-                palpitesParaSalvar[game.id] = { h: hInput.value, a: aInput.value };
+                const hVal = parseInt(hInput.value);
+                const aVal = parseInt(aInput.value);
+                const kickoffMs = parseKickoff(day[0], game.time);
+                
+                if (hVal >= 0 && aVal >= 0) {
+                    if (!hInput.disabled) {
+                        // CORREÇÃO DO TRAPACEIRO: Se o utilizador tirou o 'disabled' à força pelo F12, o JS barra se o jogo já começou!
+                        if (Date.now() < kickoffMs) {
+                            palpitesParaSalvar[game.id] = { h: hVal, a: aVal };
+                        }
+                    } else {
+                        // Se já estava 'disabled' legitimamente pelo sistema, passa.
+                        palpitesParaSalvar[game.id] = { h: hVal, a: aVal };
+                    }
+                }
             }
         });
     });
@@ -449,8 +472,12 @@ async function saveAdminResults() {
             const hInput = document.querySelector(`.a-h-${game.id}`);
             const aInput = document.querySelector(`.a-a-${game.id}`);
             if (hInput && aInput && hInput.value !== "" && aInput.value !== "") {
-                gabarito[game.id] = { h: hInput.value, a: aInput.value };
-                enviouAlgo = true;
+                const hVal = parseInt(hInput.value);
+                const aVal = parseInt(aInput.value);
+                if (hVal >= 0 && aVal >= 0) {
+                    gabarito[game.id] = { h: hVal, a: aVal };
+                    enviouAlgo = true;
+                }
             }
         });
     });
