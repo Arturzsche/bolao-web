@@ -238,8 +238,6 @@ function parseKickoff(dayStr, timeStr) {
     const month = match[2].toUpperCase() === "JULHO" ? 6 : 5; 
     const [hours, minutes] = timeStr.split(':').map(Number);
     
-    // CORREÇÃO CRÍTICA DO "FUSO HORÁRIO":
-    // Jogos marcados como 00:00 ou 01:00 tecnicamente ocorrem no dia SEGUINTE.
     if (hours === 0 || hours === 1) {
         day += 1;
     }
@@ -273,6 +271,8 @@ function renderGames(containerId, mode) {
             const isDisabled = (mode === 'user' && state === 'late') ? 'disabled' : '';
             
             let lockIcon = '';
+            let extraBtn = '';
+
             if (mode === 'user') {
                 if (state === 'late') {
                     lockIcon = `<span class="lock-status late"><i class="ph-fill ph-lock-key"></i> Fechado</span>`;
@@ -281,13 +281,15 @@ function renderGames(containerId, mode) {
                 } else {
                     lockIcon = `<span class="lock-status open"><i class="ph-fill ph-check-circle"></i> Aberto</span>`;
                 }
+            } else if (mode === 'admin') {
+                // BOTÃO DE LIXEIRA ADICIONADO PARA O ADMIN
+                extraBtn = `<button class="btn-clear-admin" onclick="limparGabaritoJogo('${game.id}')" title="Apagar Placar"><i class="ph-bold ph-trash"></i></button>`;
             }
 
             const onInput = `oninput="updateMatchRowColor(this)"`;
             
-            // CORREÇÃO DOS NÚMEROS NEGATIVOS: Adicionado min="0" max="99" aos inputs
             html += `
-            <div class="match-entry-row">
+            <div class="match-entry-row ${mode === 'admin' ? 'admin-mode' : ''}">
                 <div class="entry-group-box">
                     <span class="group-letter">${game.grp}</span>
                     <span class="match-time">${game.time}</span>
@@ -300,12 +302,24 @@ function renderGames(containerId, mode) {
                     <input type="number" min="0" max="99" inputmode="numeric" class="entry-input ${prefix}-a-${game.id}" data-match="${game.id}" ${onInput} ${isDisabled}>
                 </div>
                 <div class="entry-team-box away"><span class="fi fi-${game.f2}"></span> ${game.t2}</div>
+                ${extraBtn ? `<div class="entry-admin-action">${extraBtn}</div>` : ''}
             </div>`;
         });
         html += `</div>`;
     });
     container.innerHTML = html;
 }
+
+// FUNÇÃO PARA O ADMIN LIMPAR O JOGO INDIVIDUAL
+window.limparGabaritoJogo = function(mId) {
+    if(!confirm("Apagar o placar oficial deste jogo? Os pontos de todos serão recalculados ao clicar em Publicar.")) return;
+    const hInput = document.querySelector(`.a-h-${mId}`);
+    const aInput = document.querySelector(`.a-a-${mId}`);
+    if(hInput) hInput.value = "";
+    if(aInput) aInput.value = "";
+    if(hInput) updateMatchRowColor(hInput);
+    showToast("Placar apagado! Clique em 'Publicar Gabarito' para confirmar.");
+};
 
 function updateMatchRowColor(inputElement) {
     const mId = inputElement.getAttribute('data-match');
@@ -385,7 +399,6 @@ function salvarNoMongo() {
                 const aVal = parseInt(aInput.value);
                 const kickoffMs = parseKickoff(day[0], game.time);
                 
-                // Validação Front-end forte antes mesmo de abrir o modal
                 if (hVal >= 0 && aVal >= 0 && Date.now() < kickoffMs) {
                     temPalpiteNovo = true;
                 }
@@ -422,12 +435,10 @@ async function executarSalvamento() {
                 
                 if (hVal >= 0 && aVal >= 0) {
                     if (!hInput.disabled) {
-                        // CORREÇÃO DO TRAPACEIRO: Se o utilizador tirou o 'disabled' à força pelo F12, o JS barra se o jogo já começou!
                         if (Date.now() < kickoffMs) {
                             palpitesParaSalvar[game.id] = { h: hVal, a: aVal };
                         }
                     } else {
-                        // Se já estava 'disabled' legitimamente pelo sistema, passa.
                         palpitesParaSalvar[game.id] = { h: hVal, a: aVal };
                     }
                 }
@@ -465,28 +476,21 @@ async function executarSalvamento() {
 async function saveAdminResults() {
     showLoading(true);
     let gabarito = {};
-    let enviouAlgo = false;
     
     ALL_GAMES.forEach(day => {
         day[1].forEach(game => {
             const hInput = document.querySelector(`.a-h-${game.id}`);
             const aInput = document.querySelector(`.a-a-${game.id}`);
+            // Pega TODOS os campos do admin que NÃO estão em branco (se o admin apagou na lixeira, ele será ignorado aqui)
             if (hInput && aInput && hInput.value !== "" && aInput.value !== "") {
                 const hVal = parseInt(hInput.value);
                 const aVal = parseInt(aInput.value);
                 if (hVal >= 0 && aVal >= 0) {
                     gabarito[game.id] = { h: hVal, a: aVal };
-                    enviouAlgo = true;
                 }
             }
         });
     });
-
-    if (!enviouAlgo) {
-        showToast("Nenhum placar para publicar!");
-        showLoading(false);
-        return;
-    }
 
     try {
         await fetch(`${API_URL}/salvar`, { 
@@ -508,7 +512,7 @@ function calculateAndRenderRanking() {
     if (!tbody) return;
 
     if (!Array.isArray(allUsersData) || allUsersData.length === 0 || (allUsersData.length === 1 && allUsersData[0].name === "Admin")) {
-        tbody.innerHTML = `<tr><td colspan="4" style="padding: 20px; color: #999;">Nenhum participante registrado ainda.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="5" style="padding: 20px; color: #999;">Nenhum participante registrado ainda.</td></tr>`;
         return;
     }
 
@@ -517,7 +521,9 @@ function calculateAndRenderRanking() {
 
     allUsersData.forEach(u => {
         if (!u || !u.name || u.name === "Admin") return;
-        let p = { name: u.name, pts: 0, acertos: 0 };
+        
+        // ADICIONADO: Separação de pontos (cravados = 8pts, acertos simples = 3pts)
+        let p = { name: u.name, pts: 0, acertos: 0, cravados: 0 };
         const palps = u.jogos || {};
         
         Object.keys(safeAdminResults).forEach(mId => {
@@ -525,22 +531,29 @@ function calculateAndRenderRanking() {
                 const ph = parseInt(palps[mId].h), pa = parseInt(palps[mId].a);
                 const rh = parseInt(safeAdminResults[mId].h), ra = parseInt(safeAdminResults[mId].a);
                 if(!isNaN(ph) && !isNaN(pa) && !isNaN(rh) && !isNaN(ra)) {
-                    if(ph === rh && pa === ra) { p.pts += 8; p.acertos++; }
-                    else if((ph>pa && rh>ra) || (ph<pa && rh<ra) || (ph===pa && rh===ra)) { p.pts += 3; p.acertos++; }
+                    if(ph === rh && pa === ra) { 
+                        p.pts += 8; 
+                        p.cravados++; 
+                    } else if((ph>pa && rh>ra) || (ph<pa && rh<ra) || (ph===pa && rh===ra)) { 
+                        p.pts += 3; 
+                        p.acertos++; 
+                    }
                 }
             }
         });
         ranking.push(p);
     });
 
-    ranking.sort((a, b) => b.pts - a.pts || b.acertos - a.acertos);
+    // Desempate: 1º Pontos, 2º Mais placares exatos, 3º Mais acertos simples
+    ranking.sort((a, b) => b.pts - a.pts || b.cravados - a.cravados || b.acertos - a.acertos);
     
     tbody.innerHTML = ranking.map((r, i) => {
         return `<tr>
             <td class="td-pos" style="color:var(--ge-blue); font-weight: 800;">${i+1}</td>
             <td style="text-align: left; padding-left: 15px; font-weight: 600;">${r.name}</td>
             <td class="td-pts" style="color:var(--text-dark); font-weight: 800; font-size: 1.1rem; background: #F9F9F9;">${r.pts}</td>
-            <td style="color: #06AA48; font-weight: 700;">${r.acertos}</td>
+            <td style="color: #666; font-weight: 700;">${r.acertos}</td>
+            <td style="color: #06AA48; font-weight: 800;">${r.cravados}</td>
         </tr>`;
     }).join('');
 }
