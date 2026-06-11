@@ -8,7 +8,7 @@
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/lipis/flag-icons@7.2.2/css/flag-icons.min.css"/>
     
-    <link rel="stylesheet" href="style.css?v=3.2">
+    <link rel="stylesheet" href="style.css?v=3.3">
 </head>
 <body>
 
@@ -70,8 +70,9 @@
                         <tr>
                             <th style="width: 50px;">POS</th>
                             <th style="text-align: left; padding-left: 15px;">PARTICIPANTE</th>
-                            <th title="Pontuação Total" style="width: 100px;">PONTOS</th>
-                            <th title="Quantidade de resultados certos" style="width: 100px;">ACERTOS</th>
+                            <th title="Pontuação Total" style="width: 80px;">PONTOS</th>
+                            <th title="Acerto de Vencedor/Empate (3 pts)" style="width: 90px;">RESULTADOS</th>
+                            <th title="Acerto do Placar Exato (8 pts)" style="width: 90px;">PLACAR EXATO</th>
                         </tr>
                     </thead>
                     <tbody id="ranking-body-app">
@@ -82,10 +83,10 @@
 
         <section id="view-admin" class="view">
             <div class="admin-warning" style="background: #fee2e2; color: #ef4444; padding: 12px; border-radius: 6px; font-size: 0.85rem; margin-bottom: 20px; border: 1px solid #fca5a5;">
-                <strong>Área do Organizador:</strong> Lance aqui os placares reais da Copa. A classificação será atualizada para todos instantaneamente.
+                <strong>Área do Organizador:</strong> Lance aqui os placares reais da Copa. Se errou algum, clique na lixeira para limpar.
             </div>
             <div id="admin-slip-container"></div>
-            <button class="btn-float-save" style="background: var(--ge-blue);" onclick="saveAdminResults()"><i class="ph-fill ph-upload-simple"></i> Publicar Gabarito Oficial</button>
+            <button class="btn-float-save" style="background: var(--ge-blue);" onclick="saveAdminResults()">Publicar Gabarito Oficial</button>
         </section>
     </div>
 </div>
@@ -107,6 +108,6 @@
     <div class="spinner"></div>
 </div>
 
-<script src="script.js?v=3.2"></script>
+<script src="script.js?v=3.3"></script>
 </body>
 </html>
